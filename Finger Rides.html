@@ -1,0 +1,1558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Finger Rides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --page:#eef0f5; --panel:#ffffff; --panel2:#e4e7f0; --ink:#14162a; --muted:#5b6078; --line:#d3d7e4;
+  --accent:#ffb800; --on-accent:#14162a; --pink:#e8336d;
+  --mat:#1d5c52; --mat-line:rgba(255,255,255,.16); --mat-line2:rgba(255,255,255,.3);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#101221; --panel:#1a1d33; --panel2:#242848; --ink:#f1f2fa; --muted:#9aa0c2; --line:#2e3358;
+    --accent:#ffd23f; --pink:#ff5c8a;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#101221; --panel:#1a1d33; --panel2:#242848; --ink:#f1f2fa; --muted:#9aa0c2; --line:#2e3358;
+  --accent:#ffd23f; --pink:#ff5c8a;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--page);color:var(--ink);font-family:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.4;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:980px;margin:0 auto;padding:16px 16px 48px}
+.display{font-family:'Archivo Black',Impact,'Arial Black',sans-serif;letter-spacing:-.01em}
+button{font:inherit;color:inherit}
+
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h1{margin:0;font-size:1.3rem}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:6px 12px;cursor:pointer;font-size:.85rem}
+.ghost:hover{color:var(--ink);border-color:var(--muted)}
+
+.hud{display:grid;grid-template-columns:1.25fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.money{font-size:clamp(2rem,8.5vw,3.1rem);line-height:1;margin-top:2px;overflow-wrap:anywhere}
+.sub{color:var(--muted);font-size:.85rem}
+.streak-num{font-size:clamp(1.8rem,7vw,2.6rem);line-height:1;margin-top:2px;color:var(--ink)}
+.streak-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.streak-mult{font-weight:700;color:var(--pink)}
+.best{margin-top:4px}
+
+.stage{
+  position:relative;border-radius:24px;overflow:hidden;
+  height:clamp(280px,56vw,360px);
+  display:grid;place-items:center;
+  background-color:var(--mat);
+  background-image:
+    linear-gradient(var(--mat-line2) 1px,transparent 1px),
+    linear-gradient(90deg,var(--mat-line2) 1px,transparent 1px),
+    linear-gradient(var(--mat-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--mat-line) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;
+  box-shadow:inset 0 0 0 6px rgba(0,0,0,.18);
+  user-select:none;-webkit-user-select:none;
+}
+.chip{position:absolute;top:14px;left:16px;background:rgba(0,0,0,.35);color:#fff;border-radius:999px;padding:5px 12px;font-size:.85rem;font-weight:600;max-width:55%}
+.hint{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:rgba(255,255,255,.85);font-size:.95rem;transition:opacity .3s;pointer-events:none;padding:0 16px}
+.hint.hide{opacity:0}
+.flash{position:absolute;top:14px;right:16px;font-family:'Archivo Black',Impact,sans-serif;color:#fff;font-size:1.15rem;opacity:0;pointer-events:none;text-shadow:0 2px 0 rgba(0,0,0,.35);text-align:right;max-width:45%}
+
+.board-btn{
+  display:block;width:min(80%,440px);aspect-ratio:400/140;
+  background:none;border:0;padding:0;margin:0;cursor:pointer;
+  perspective:900px;touch-action:manipulation;position:relative;
+  border-radius:40px;
+}
+.board-btn:focus-visible{outline:3px solid #ffd23f;outline-offset:8px}
+.shadow{position:absolute;left:8%;right:8%;bottom:-14px;height:26px;border-radius:50%;background:#000;opacity:.4;filter:blur(9px)}
+.board3d{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face svg{display:block;width:100%;height:100%;overflow:visible}
+.face.bottom{transform:rotateY(180deg)}
+
+.pop{position:absolute;pointer-events:none;font-family:'Archivo Black',Impact,sans-serif;color:#ffd23f;font-size:1.5rem;text-shadow:0 2px 0 rgba(0,0,0,.45);animation:floatUp .9s ease-out forwards;z-index:3;white-space:nowrap}
+@keyframes floatUp{from{opacity:1;transform:translate(-50%,-50%) scale(.9)}to{opacity:0;transform:translate(-50%,-110px) scale(1.15)}}
+
+.timer{position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(0,0,0,.35)}
+.timer i{display:block;height:100%;width:100%;transform-origin:left center;transform:scaleX(0);background:var(--tier,#ffd23f)}
+
+.eq{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px 0 6px}
+.eq .cell{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 14px;text-align:center;min-width:76px}
+.eq .cell b{display:block;font-family:'Archivo Black',Impact,sans-serif;font-size:1.25rem;line-height:1.1}
+.eq .cell span{font-size:.78rem;color:var(--muted)}
+.eq .op{color:var(--muted);font-weight:700}
+.eq .total{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.eq .total span{color:var(--on-accent);opacity:.75}
+
+.next{margin:14px 0 18px}
+.bar{height:10px;border-radius:999px;background:var(--panel2);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .2s}
+
+.cols{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:860px){.cols{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}}
+h2{margin:0 0 4px;font-size:1.05rem}
+.panel-note{margin:0 0 4px;color:var(--muted);font-size:.85rem}
+.count{margin:0 0 12px;font-weight:700;font-size:.9rem;color:var(--ink)}
+.scroll{max-height:560px;overflow-y:auto;position:relative;padding-right:6px;margin-right:-6px;overscroll-behavior:contain}
+
+.tricks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.trick{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;
+  background:var(--panel2);border:2px solid transparent;border-radius:10px;padding:10px 12px;cursor:pointer}
+.trick .mult{font-weight:700;color:var(--muted);white-space:nowrap}
+.trick.sel{border-color:var(--accent);background:var(--panel)}
+.trick.locked{cursor:not-allowed;opacity:.55}
+.trick.locked .mult{font-weight:600;font-size:.82rem}
+.trick:focus-visible,.buy:focus-visible,.ghost:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.deck{background:var(--panel2);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.deck.on{outline:2px solid var(--accent)}
+.preview{background:var(--mat);border-radius:10px;padding:6px 8px}
+.preview svg{display:block;width:100%;height:auto}
+.deck .row{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.deck .nm{font-weight:700;font-size:.92rem}
+.deck .mx{font-weight:700;color:var(--muted);font-size:.9rem;white-space:nowrap}
+.buy{border:0;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--on-accent)}
+.buy[disabled]{cursor:not-allowed}
+.buy.poor{background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+.buy.equipped{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.buy.owned{background:var(--ink);color:var(--page)}
+
+.btns{display:flex;gap:8px}
+.stage{transition:background-color .6s}
+.aura{position:absolute;left:50%;top:50%;width:min(100%,560px);aspect-ratio:2.4;transform:translate(-50%,-50%);background:radial-gradient(closest-side,var(--tier,#ffd23f),transparent);opacity:var(--glow,0);filter:blur(14px);transition:opacity .3s;pointer-events:none}
+.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.combo{position:absolute;left:0;right:0;top:30%;text-align:center;font-family:'Archivo Black',Impact,sans-serif;font-size:clamp(2rem,9vw,3.6rem);color:#fff;pointer-events:none;opacity:0;z-index:4;text-shadow:0 4px 0 rgba(0,0,0,.45),0 0 28px var(--tier,#ffd23f);transform:rotate(-4deg)}
+.vig{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:2;background:radial-gradient(circle,transparent 35%,rgba(0,0,0,.7))}
+.stock{font-size:.82rem;font-weight:700;color:var(--muted)}.stock.out{color:var(--pink)}
+.brand{color:var(--pink)}
+.vs{position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(0,0,0,.7);color:#fff;border-radius:14px;padding:8px 14px;width:min(86%,380px);display:none;text-align:center;font-weight:700;font-size:.9rem}
+.vs.on{display:block}
+.vs-bars{display:grid;gap:4px;margin:6px 0}.vs-bars>div{height:8px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden}.vs-bars i{display:block;height:100%;width:0;background:#ffd23f}
+.cprev{display:flex;gap:10px;background:var(--mat);border-radius:12px;padding:10px;margin-bottom:10px}.cprev svg{flex:1;min-width:0;height:auto}
+.crow{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px}
+.crow label{display:flex;flex-direction:column;font-size:.8rem;color:var(--muted);gap:3px}
+.crow select,.crow input{font:inherit;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.stage[data-loc="desk"]{background:repeating-linear-gradient(90deg,rgba(0,0,0,.07) 0 2px,transparent 2px 70px),linear-gradient(#d2ab72,#b98d55)}
+.stage[data-loc="kitchen"]{background-color:#fff;background-image:linear-gradient(90deg,rgba(214,40,57,.55) 50%,transparent 50%),linear-gradient(rgba(214,40,57,.55) 50%,transparent 50%);background-size:48px 48px}
+.stage[data-loc="garage"]{background:radial-gradient(circle at 20% 30%,rgba(0,0,0,.3),transparent 25%),radial-gradient(circle at 75% 70%,rgba(0,0,0,.25),transparent 30%),#7d8085}
+.stage[data-loc="shop"]{background:conic-gradient(#111 25%,#eee 0 50%,#111 0 75%,#eee 0) 0 0/64px 64px}
+.stage[data-loc="pro"]{background:repeating-linear-gradient(0deg,transparent 0 58px,rgba(255,255,255,.55) 58px 62px),linear-gradient(#6d8fb3,#3d5a7a)}
+.stage[data-loc="arena"]{background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.4),transparent 55%),radial-gradient(circle at 12% 0%,rgba(255,92,138,.5),transparent 45%),radial-gradient(circle at 88% 0%,rgba(92,200,255,.5),transparent 45%),#12061f}
+.urow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.urow b{display:block}.urow span{color:var(--muted);font-size:.85rem}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.item{background:var(--panel2);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.item .pv{background:var(--mat);border-radius:8px;height:50px;display:grid;place-items:center}
+.item b{font-size:.92rem}.item span{color:var(--muted);font-size:.8rem;min-height:2.4em}
+.custom{margin-bottom:16px}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
+.sw{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);cursor:pointer;padding:0}
+.sw.def{background:repeating-linear-gradient(45deg,var(--panel2) 0 6px,var(--panel) 6px 12px)}
+.sw.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+.sw:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.home{position:fixed;inset:0;z-index:30;display:grid;place-items:center;overflow:auto;padding:max(24px,env(safe-area-inset-top,0px)) 20px max(24px,env(safe-area-inset-bottom,0px));
+  background:linear-gradient(120deg,#12103a,#3b1470,#0c4a6e,#12103a);background-size:300% 300%;animation:bgmove 14s ease infinite;transition:opacity .4s,visibility 0s}
+.home::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(circle,#000 30%,transparent 80%);-webkit-mask-image:radial-gradient(circle,#000 30%,transparent 80%)}
+.home.gone{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .4s,visibility 0s .4s}
+.drift{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.dboard{position:absolute;top:0;opacity:.35;animation:rise linear infinite}
+.dboard svg{display:block;width:100%;height:auto}
+.home-in{position:relative;text-align:center;color:#fff;max-width:560px;width:100%}
+.tag{font-weight:700;letter-spacing:.04em;color:#ffd23f}
+.logo{margin:6px 0 10px;font-size:clamp(2.8rem,13vw,6rem);line-height:.9;animation:wob 4s ease-in-out infinite;filter:drop-shadow(0 6px 0 rgba(0,0,0,.35))}
+.logo span,.logo em{display:block;font-style:normal;background:linear-gradient(90deg,#ffd23f,#ff5c8a,#5cc8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.spin{width:min(70vw,340px);aspect-ratio:400/140;margin:18px auto 22px;perspective:900px}
+.spin3d{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:spinflip 3.2s ease-in-out infinite}
+.play{font-size:1.8rem;padding:14px 64px;border:0;border-radius:999px;background:#ffd23f;color:#14162a;cursor:pointer;box-shadow:0 6px 0 #b8860b,0 12px 30px rgba(255,210,63,.35);animation:pulse 1.6s ease-in-out infinite}
+.play:hover{transform:translateY(-2px)}
+.play:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.hstats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:22px 0 14px}
+.hstats div{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 14px;min-width:84px}
+.hstats b{display:block;font-family:'Archivo Black',Impact,sans-serif;font-size:1.1rem}
+.hstats span{font-size:.78rem;opacity:.75}
+.vt{display:flex;gap:8px;justify-content:center;margin-bottom:16px}.vt button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:8px 18px;font-weight:700;cursor:pointer}.vt button.on{background:#ffd23f;color:#14162a;border-color:transparent}
+.brands{font-size:.9rem;opacity:.85}
+@keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes rise{from{transform:translateY(110vh) rotate(var(--r))}to{transform:translateY(-30vh) rotate(calc(var(--r) * -2))}}
+@keyframes spinflip{0%{transform:translateY(0) rotateX(0) rotateZ(-6deg)}50%{transform:translateY(-34px) rotateX(180deg) rotateZ(6deg)}100%{transform:translateY(0) rotateX(360deg) rotateZ(-6deg)}}
+@keyframes wob{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(2deg) scale(1.03)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){.home,.home *{animation:none!important}}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);
+  background:var(--ink);color:var(--page);padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .25s;z-index:10;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:520px){.hud{grid-template-columns:1fr 1fr}.card{padding:12px}.scroll{max-height:440px}}
+@media (prefers-reduced-motion:reduce){.pop{animation-duration:.01ms}.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1 class="display">Finger Rides</h1>
+    <div class="btns"><button class="ghost" id="vtBtn" type="button">Switch to bikes</button><button class="ghost" id="homeBtn" type="button">Home</button><button class="ghost" id="muteBtn" type="button">Sound on</button><button class="ghost" id="resetBtn" type="button">Reset game</button></div>
+  </div>
+
+  <div class="hud">
+    <div class="card">
+      <div class="sub">Cash</div>
+      <div class="money display" id="money">$0</div>
+      <div class="sub" id="landed">0 tricks landed</div>
+      <div class="sub" id="passive"></div>
+    </div>
+    <div class="card">
+      <div class="sub">Streak</div>
+      <div class="streak-row">
+        <div class="streak-num display" id="streak">0</div>
+        <div class="streak-mult" id="streakMultTop">×1</div>
+      </div>
+      <div class="sub best" id="best">Best streak: 0</div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="chip" id="chip">Ollie</div>
+    <div class="aura" id="aura"></div><div class="flash" id="flash"></div>
+    <button class="board-btn" id="board" type="button" aria-label="Do a trick">
+      <div class="shadow" id="shadow"></div>
+      <div class="board3d" id="board3d">
+        <div class="face top" id="faceTop"></div>
+        <div class="face bottom" id="faceBottom"></div>
+      </div>
+    </button>
+    <div class="vs" id="vs"><div id="vsT"></div><div class="vs-bars"><div><i id="vsMe"></i></div><div><i id="vsPro" style="background:#ff5c8a"></i></div></div><div id="vsN"></div></div>
+    <canvas class="fx" id="fx"></canvas><div class="combo" id="combo"></div><div class="vig" id="vig"></div><div class="hint" id="hint">Tap the ride, or press space, to land a trick. Keep tapping to build a streak.</div>
+    <div class="timer" aria-hidden="true"><i id="timerFill"></i></div>
+  </div>
+
+  <div class="eq" aria-label="Payout breakdown">
+    <div class="cell"><b id="eqTrick">×1</b><span>Trick</span></div>
+    <div class="op">×</div>
+    <div class="cell"><b id="eqDeck">×1</b><span>Ride</span></div>
+    <div class="op">×</div>
+    <div class="cell"><b id="eqStreak">×1</b><span>Streak</span></div>
+    <div class="op">=</div>
+    <div class="cell total"><b id="eqTotal">$1</b><span>Next landing</span></div>
+  </div>
+
+  <div class="card next">
+    <div class="sub" id="nextText">Next trick</div>
+    <div class="bar"><i id="nextBar"></i></div>
+    <div class="sub" id="daily" style="margin-top:8px"></div>
+  </div>
+
+  <div class="cols">
+    <section class="card"><h2 class="display">Locations</h2><p class="panel-note">Each spot pays more. Unlock them with cash milestones.</p><div class="tricks" id="locList"></div></section>
+    <section class="card"><h2 class="display">Competition</h2><p class="count" id="trophyLine"></p>
+      <p class="panel-note">Score style points in 15 seconds. Harder tricks and longer streaks score more.</p>
+      <div class="sub">Boss challenges: beat a pro fingerboarder (cash reward, once)</div><div class="tricks" id="bossList" style="margin:6px 0 12px"></div>
+      <div class="sub">Tournaments: win 3 rounds for a trophy (+3% earnings each)</div><div class="tricks" id="tourList" style="margin-top:6px"></div></section>
+  </div>
+  <section class="card custom"><h2 class="display">Upgrades</h2>
+    <p class="panel-note">Levels up to 20. Prices rise with every level and as you progress.</p><div id="upgList"></div></section>
+  <div class="cols">
+    <section class="card"><h2 class="display">Wheel shop</h2><p class="panel-note">Different wheel designs.</p><div class="items" id="wheelShop"></div></section>
+    <section class="card"><h2 class="display">Fork and bar shop</h2><p class="panel-note">Forks and bars with special abilities.</p><div class="items" id="truckShop"></div></section>
+  </div>
+  <section class="card custom"><h2 class="display">Sticker shop</h2><p class="panel-note">Buy stickers, then place or remove them on your grip tape.</p><div class="items" id="stickerShop"></div></section>
+  <section class="card custom">
+    <h2 class="display">Ride creator</h2>
+    <p class="panel-note">Build your setup from parts you own: deck, wheels, trucks, stickers and colors. Save it as a loadout.</p>
+    <div class="cprev" id="cPrev"></div>
+    <div class="crow"><label>Deck <select id="cDeck"></select></label><label>Wheel design <select id="cWheel"></select></label><label>Trucks <select id="cTruck"></select></label></div>
+    <div class="sub">Stickers</div><div class="swatches" id="cStick"></div>
+    <div class="sub">Wheels</div><div class="swatches" id="wheelSw"></div>
+    <div class="sub">Forks and bars</div><div class="swatches" id="truckSw"></div>
+    <div class="sub">Saved loadouts</div><div class="crow"><input id="bName" placeholder="Loadout name" maxlength="24"><button type="button" class="buy" id="bSave">Save loadout</button></div><div id="bList"></div>
+  </section>
+
+  <div class="cols">
+    <section class="card">
+      <h2 class="display">Tricks</h2>
+      <p class="panel-note">Hit a cash milestone to unlock a trick for good. Spending cash never locks one again.</p>
+      <p class="count" id="trickCount"></p>
+      <div class="scroll" id="trickScroll"><ul class="tricks" id="tricks"></ul></div>
+    </section>
+    <section class="card">
+      <h2 class="display">Rides</h2>
+      <p class="panel-note">Buying a ride costs cash, but a better ride multiplies every trick.</p>
+      <p class="count" id="deckCount"></p>
+      <p class="count" id="restock"></p>
+      <div class="scroll"><div class="shop" id="shop"></div></div>
+    </section>
+  </div>
+</div>
+<div class="home" id="home">
+  <div class="drift" id="drift" aria-hidden="true"></div>
+  <div class="home-in">
+    <div class="tag">tiny rides. huge combos.</div>
+    <h1 class="logo display"><span>FINGER</span><span>SCOOTERS</span><em>&amp; BIKES</em></h1>
+    <div class="spin" aria-hidden="true"><div class="spin3d" id="spin"></div></div>
+    <div class="vt"><button type="button" data-v="scooter">Finger scooters</button><button type="button" data-v="bike">Finger bikes</button></div>
+    <button class="play display" id="playBtn" type="button">Play</button>
+    <div class="hstats" id="hstats"></div>
+    <div class="brands">Brands: <b>Tech Deck, Flick Trix, Haro, Sunday, WeThePeople, Cult, Odyssey, Blunt, Envy, Lucky, Root Industries, Grit, Fuzion</b></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/*DATA-START*/
+const nice = x => Number(x.toPrecision(2));
+/* One trick per line: "Name|tokens". x = barspin-style roll, y = tailwhip/spin, z = flips, tilt = manual pitch,
+   hx/hz = held poses, dx = grind travel, h = hop height, dur = ms. */
+const parseTricks = txt => txt.trim().split('\n').map(ln => {
+  const [name, spec = ''] = ln.split('|'), o = {name: name.trim(), x:0, y:0, z:0, at:0, mult:1};
+  (spec.match(/[a-z]+-?\d+/g) || []).forEach(t => { const m = t.match(/([a-z]+)(-?\d+)/); o[m[1]] = +m[2]; });
+  return o;
+});
+const SCOOTER_TRICKS = `Bunny hop|tilt14
+Manual|tilt22 h3 dur650
+Nose manual|tilt-22 h3 dur650
+Hop 180|y180 h30
+Barspin|x360
+Tailwhip|y360
+No-footer|tilt-18 h40
+No-hander|h42 hx40
+Fakie 180|y-180 h30
+Peter pan|tilt-30 h44
+X-up|hx50 h44
+Tabletop|hx90 h46
+Can-can|z25 h46
+Superman|hx-70 h48 dur600
+Cliffhanger|z-35 h46
+Barspin tailwhip|x360 y360
+Tailwhip no-hander|y360 h50 hx40
+Backflip|z-360 h55
+Frontflip|z360 h55
+360|y360 h50
+Flair|z-360 y180 h58
+Tuck no-hander|z-360 h56 hx40
+Double barspin|x720
+Double tailwhip|y720
+360 barspin|y360 x360
+360 tailwhip|y720 tilt10
+Bri flip|z-360 x360 h58
+Flip whip|z-360 y360 h60
+Flair whip|z-360 y540 h60
+Backflip barspin|z-360 x360
+Backflip tailwhip|z-360 y360
+Frontflip tailwhip|z360 y360
+Double backflip|z-720 h64
+Double frontflip|z720 h64
+540|y540
+720|y720
+900|y900
+1080|y1080
+Triple tailwhip|y1080
+Triple barspin|x1080
+Double flair|z-720 y360 h66
+Double bri flip|z-720 x360 h66
+Triple backflip|z-1080 h72
+Quad tailwhip|y1440
+50-50 grind|dx60 h10 dur600
+Smith grind|dx60 h10 hz25 tilt14 dur650
+Feeble grind|dx60 h10 hz-25 tilt14 dur650
+Nose grind|dx60 h10 tilt-18 dur600
+5-0 grind|dx60 h10 tilt18 dur600
+Tailwhip to grind|y360 dx60 h14 dur700
+Barspin to grind|x360 dx60 h14 dur700
+Quantum flip|z-720 y720 x360 h70
+Helicopter whip|y1440 x720
+Orbit whip|z-720 y1080
+Hyper flair|z-1080 y540
+Galaxy 1440|y1440 z-360
+Infinity whip|y2160 x1080 z-720`;
+const BIKE_TRICKS = `Bunny hop|tilt14
+Manual|tilt22 h3 dur650
+Wheelie|tilt30 h3 dur700
+Nose manual|tilt-22 h3 dur650
+Endo|tilt-35 h3 dur700
+180|y180 h30
+Barspin|x360
+Tailwhip|y360
+Tabletop|hx90 h44
+No-hander|h42 hx40
+No-footer|tilt-18 h40
+X-up|hx50 h44
+Can-can|z25 h46
+Superman|hx-70 h48
+Seat grab|tilt-25 h46
+Turndown|hx-90 h46
+Tire grab|z35 h46
+Truck driver|hx60 h46
+Indian air|z-30 tilt10 h46
+Heel clicker|z30 h46
+Lookback|y180 h40 hx20
+Nothing|h48 hx-30
+Rocket air|tilt-40 h52
+Cannonball|hx110 h48
+Barspin tailwhip|x360 y360
+Backflip|z-360 h55
+Frontflip|z360 h55
+360|y360 h50
+Flatspin|y720 h40
+Flair|z-360 y180 h58
+Decade|x360 hz20 h52
+Double barspin|x720
+Double tailwhip|y720
+360 barspin|y360 x360
+360 tailwhip|y720 tilt10
+Tailwhip backflip|z-360 y360
+Barspin backflip|z-360 x360
+Double backflip|z-720 h64
+Double frontflip|z720 h64
+540|y540
+720|y720
+900|y900
+1080|y1080
+Triple tailwhip|y1080
+720 tailwhip|y720 x360
+Flair whip|z-360 y540
+Double flair|z-720 y360
+Triple backflip|z-1080 h72
+Hang five|dx60 h10 hz25 dur650
+50-50 peg grind|dx60 h10 dur600
+Icepick grind|dx60 h10 hz-60 tilt20 dur650
+Feeble grind|dx60 h10 hz-25 tilt14 dur650
+Smith grind|dx60 h10 hz25 tilt14 dur650
+Toothpick grind|dx60 h10 tilt-24 dur650
+Crooked grind|dx60 h10 hz20 tilt-16 dur650
+Double peg grind|dx60 h10 tilt-10 dur600
+Barspin to 50-50|x360 dx60 h14 dur700
+Wallride|hz90 dx40 h10 dur700
+Quantum whip|y1080 z-360 x360
+Helix flip|z-720 y720
+Hyperloop 1080|y1080 z-720 x720
+Galaxy backflip|z-1440 y360
+Mega infinity whip|y2160 z-1080 x1080`;
+const SCOOTERS = [['','Starter Scooter','#3b82f6','#e5e7eb','#f5f5f5'],['Blunt','Prodigy Red','#d0242e','#111111','#f5f5f5'],['Envy','Prodigy Black','#161616','#e8283c','#f5f5f5'],
+  ['Lucky','Crew Blue','#2563eb','#ffd23f','#f5f5f5'],['Root Industries','Type R Teal','#14b8a6','#111111','#f5f5f5'],['Grit','Fluxx Pink','#ff7ab8','#161616','#f5f5f5'],
+  ['Fuzion','Z300 Silver','#c0c6d0','#161616','#f5f5f5'],['Madd Gear','Pro Orange','#ff7a1a','#161616','#f5f5f5'],['Apex','Pro White','#f4f4f2','#e8283c','#222222'],
+  ['Triad','Chrome','#d6dbe3','#2f6fe4','#222222'],['Blunt','Prodigy Gold','#d4af37','#161616','#f5f5f5'],['Envy','Prodigy Neon','#7dff6a','#161616','#f5f5f5'],
+  ['Root Industries','Type R Purple','#8a5cff','#ffd23f','#f5f5f5'],['Lucky','Crew Limited Gold Rush','#ffcf3a','#8a4b12','#161616']];
+const BIKES = [['Flick Trix','STA 500','#9aa0a6','#e8283c','#222222'],['Flick Trix','Odyssey','#2f6fe4','#ffd23f','#f5f5f5'],['Tech Deck','Haro Black','#161616','#e8283c','#f5f5f5'],
+  ['Tech Deck','Sunday Blue','#2a6fdb','#ffffff','#222222'],['Tech Deck','WeThePeople Purple','#7a3fd0','#ffd23f','#f5f5f5'],['Tech Deck','Cult Pink','#ff7ab8','#111111','#222222'],
+  ['Tech Deck','Cult White','#f4f4f2','#111111','#222222'],['Tech Deck','WeThePeople White/Blue','#f4f4f2','#2f6fe4','#222222'],['Tech Deck','Odyssey Chrome','#cfd5de','#161616','#222222'],
+  ['Tech Deck','Haro Gold','#d4af37','#161616','#f5f5f5'],['Tech Deck','Sunday Neon','#7dff6a','#161616','#f5f5f5'],['Tech Deck','Cult Red','#c4161c','#f5f5f5','#222222'],
+  ['Tech Deck','WeThePeople Teal','#1fb5a8','#161616','#f5f5f5'],['Tech Deck','Limited Gold Rush','#ffcf3a','#8a4b12','#161616']];
+const PAL = [['Red','#d0242e','#111111'],['Blue','#2563eb','#ffd23f'],['Black','#161616','#e8283c'],['White','#f4f4f2','#111111'],['Neon Green','#7dff6a','#161616'],['Purple','#7a3fd0','#ffd23f'],
+  ['Orange','#ff7a1a','#161616'],['Teal','#14b8a6','#111111'],['Pink','#ff7ab8','#161616'],['Chrome','#cfd5de','#2f6fe4'],['Gold','#d4af37','#161616'],['Sky','#5cc8ff','#e8283c']];
+const SC_BRANDS = [['Blunt','Prodigy'],['Blunt','Colt'],['Envy','Prodigy'],['Envy','Colt'],['Lucky','Crew'],['Lucky','Covenant'],['Root Industries','Type R'],['Root Industries','Invictus'],['Grit','Fluxx'],['Grit','Atom'],
+  ['Fuzion','Z300'],['Fuzion','Pro X'],['Madd Gear','Pro'],['Apex','Pro'],['Triad','Renegade'],['Tilt','Stage'],['District','S-Series'],['Sacrifice','Flyte'],['Striker','Lux'],['Phoenix','Pro']];
+const BK_BRANDS = [['Tech Deck','Haro'],['Tech Deck','Sunday'],['Tech Deck','WeThePeople'],['Tech Deck','Cult'],['Tech Deck','Odyssey'],['Flick Trix','STA'],['Kink','Pro'],['Fit Bike Co','Pro'],
+  ['Subrosa','Pro'],['Colony','Pro'],['Stolen','Pro'],['Mongoose','Legion'],['Eastern','Pro'],['Fiend','Pro'],['Verde','Pro']];
+const genVeh = (brands, n) => Array.from({length: n}, (_, i) => { const [b, m] = brands[i % brands.length], k = Math.floor(i / brands.length), c = PAL[(i * 5 + k) % PAL.length]; return [b, m + ' ' + c[0] + ' Mk' + (k + 1), c[1], c[2], i % 2 ? '#222222' : '#f5f5f5']; });
+SCOOTERS.push(...genVeh(SC_BRANDS, 50)); BIKES.push(...genVeh(BK_BRANDS, 50));
+const mkVeh = (arr, type) => arr.map(([brand, model, c1, c2, wheel], j) => ({name: (brand ? brand + ' ' : '') + model, brand, type, c1, c2, wheel, art:'', mult: j ? nice(Math.pow(1.7, 13 * j / (arr.length - 1))) : 1, cost: 0}));
+function balance(TR, DK){
+  const N = TR.length, M = DK.length, iOf = j => Math.min(N - 1, Math.round(j * (N - 2) / (M - 1)));
+  TR.forEach((t, i) => { t.mult = i ? nice(Math.pow(1.38, i)) : 1; });
+  const at = [0, 50];
+  for(let i = 1; i < N - 1; i++){
+    let D = 1; DK.forEach((d, j) => { if(j > 0 && iOf(j) <= i) D = Math.max(D, d.mult); });
+    at[i + 1] = at[i] + (15 + 105 * i / (N - 1)) * (5 + 3 * Math.min(1, i / 20)) * TR[i].mult * D;
+  }
+  let prev = 0; TR.forEach((t, i) => { let v = i ? nice(at[i]) : 0; if(i && v <= prev) v = nice(prev * 1.06); t.at = v; prev = v; });
+  let pc = 0; DK.forEach((d, j) => { if(!j){ d.cost = 0; return; } let v = nice(.6 * at[iOf(j)]); if(v <= pc) v = nice(pc * 1.06); d.cost = v; pc = v; });
+}
+const POOLS = {scooter: {TR: parseTricks(SCOOTER_TRICKS), DK: mkVeh(SCOOTERS, 'scooter')}, bike: {TR: parseTricks(BIKE_TRICKS), DK: mkVeh(BIKES, 'bike')}};
+balance(POOLS.scooter.TR, POOLS.scooter.DK); balance(POOLS.bike.TR, POOLS.bike.DK);
+let VT = 'scooter', TRICKS = POOLS.scooter.TR, DECKS = POOLS.scooter.DK;
+/*DATA-END*/
+
+const DAILY_MULT = 3;         // trick of the day pays triple
+const WINDOW_MS = 1500;       // time allowed between tricks to keep the streak alive
+const STREAK_STEP = 0.1;      // each extra trick in a streak adds +0.1x
+const STREAK_CAP = 100;       // streak multiplier stops growing at ×11
+const TIER_COLORS = ['#ffd23f','#ff9f43','#ff5c8a','#5cc8ff'];
+const SAVE_KEY = 'finger-rides-v1';
+
+/* ---------- State ---------- */
+const fresh = () => ({money:0, peak:0, owned:[0], deck:0, trick:0, best:0, landed:0, vt:'scooter', vs:{}, loc:0, bossWins:[], trophies:0, builds:[], up:{trucks:0,wheels:0,grip:0,bear:0,deck:0}, ownedWheels:['classic'], wheelDesign:'classic', ownedTrucks:['std'], truck:'std', ownedStickers:[], stickers:[], wheelColor:null, truckColor:null, dailyKey:'', dailyIdx:-1, bought:{}, boughtWin:0});
+let state = fresh();
+let streak = 0, last = 0, lastShield = -1e9;
+
+const UPGRADES = [
+  {k:'trucks', name:'Better forks', K:30,  max:20, fx: l => '+' + 15 * l + '% trick points'},
+  {k:'wheels', name:'Premium wheels', K:60, max:20, fx: l => '+' + 12 * l + '% streak time, flips ' + 5 * l + '% faster'},
+  {k:'grip',   name:'Grip tape',     K:45,  max:20, fx: l => 'streak bonus +' + (.02 * l).toFixed(2) + ' per trick'},
+  {k:'bear',   name:'Bearings',      K:80,  max:20, fx: l => l ? '+$' + fmt(passivePerSec()) + '/sec passive' : 'earn cash while idle'},
+  {k:'deck',   name:'Deck upgrades', K:120, max:20, fx: l => '+' + 10 * l + '% all earnings'}
+];
+const WHEELS = [
+  {id:'classic', name:'Classic', cost:0, desc:'Plain urethane'}, {id:'stripe', name:'Racing stripe', cost:20000, desc:'Bold center stripe'},
+  {id:'dots', name:'Polka', cost:200000, desc:'Three dots'}, {id:'split', name:'Split tone', cost:2e6, desc:'Two-tone'},
+  {id:'glow', name:'Glow ring', cost:2e7, desc:'Neon edge'}, {id:'rainbow', name:'Rainbow', cost:2e8, desc:'Four color bands'}, {id:'flame', name:'Flame core', cost:2e9, desc:'Hot center'}
+];
+const TRUCK_SHOP = [
+  {id:'std', name:'Standard', cost:0, color:null, desc:'No special ability'},
+  {id:'lucky', name:'Lucky forks', cost:50000, color:'#ffd23f', desc:'10% of landings pay ×3'},
+  {id:'shield', name:'Shield forks', cost:500000, color:'#5cc8ff', desc:'Saves a streak of 5+ once every 30s'},
+  {id:'magnet', name:'Magnet forks', cost:5e6, color:'#ff5aa8', desc:'+25% passive income'},
+  {id:'midas', name:'Midas forks', cost:5e7, color:'#d4af37', desc:'Every 10th landing pays ×5'},
+  {id:'combo', name:'Combo forks', cost:5e8, color:'#8a5cff', desc:'Streak bonus +0.05 per trick'},
+  {id:'chaos', name:'Chaos forks', cost:5e9, color:'#e8283c', desc:'Each landing pays ×0.5 to ×4'}
+];
+const ST = (t, b) => `<g stroke="#222" stroke-width="1.5">${t}</g>`;
+const STICKERS = [
+  {id:'star', name:'Star', cost:2000, svg:'<polygon points="0,-11 3.2,-3.5 11,-3.5 4.8,1.5 7,9.5 0,5 -7,9.5 -4.8,1.5 -11,-3.5 -3.2,-3.5" fill="#ffd23f"/>'},
+  {id:'bolt', name:'Bolt', cost:5000, svg:'<polygon points="3,-12 -7,2 -1,2 -4,12 8,-3 1,-3" fill="#35e6ff"/>'},
+  {id:'heart', name:'Heart', cost:12000, svg:'<path d="M0 9 C -14 -1 -8 -12 0 -5 C 8 -12 14 -1 0 9z" fill="#ff4f7a"/>'},
+  {id:'smile', name:'Smiley', cost:30000, svg:'<circle r="10" fill="#ffe14a"/><circle cx="-3.5" cy="-3" r="1.6" fill="#222"/><circle cx="3.5" cy="-3" r="1.6" fill="#222"/><path d="M-5 3 Q0 9 5 3" fill="none"/>'},
+  {id:'skull', name:'Skull', cost:80000, svg:'<circle cy="-2" r="9" fill="#f2f2f2"/><rect x="-5" y="5" width="10" height="6" rx="2" fill="#f2f2f2"/><circle cx="-3.5" cy="-3" r="2.4" fill="#222"/><circle cx="3.5" cy="-3" r="2.4" fill="#222"/>'},
+  {id:'crown', name:'Crown', cost:200000, svg:'<polygon points="-11,8 -11,-6 -5,0 0,-9 5,0 11,-6 11,8" fill="#ffd23f"/>'},
+  {id:'flame', name:'Flame', cost:600000, svg:'<path d="M0 11 C -10 8 -9 -2 -2 -11 C -1 -5 4 -4 6 1 C 9 7 5 11 0 11z" fill="#ff6a1f"/>'},
+  {id:'eye', name:'Eye', cost:2e6, svg:'<ellipse rx="12" ry="7" fill="#fff"/><circle r="4.5" fill="#6a2fb8"/><circle r="1.8" fill="#111"/>'}
+];
+const stickerSVG = (id, type) => { const i = STICKERS.findIndex(x => x.id === id); if(i < 0) return ''; const bike = type === 'bike', x = bike ? 150 + (i % 4) * 32 : 152 + i * 14, y = bike ? (i < 4 ? 80 : 64) : 118; return `<g transform="translate(${x} ${y}) scale(${bike ? .8 : .42})"><g stroke="#222" stroke-width="1.5">${STICKERS[i].svg}</g></g>`; };
+function wheelOv(id, cx, cy, r){
+  switch(id){
+    case 'stripe': return `<circle cx="${cx}" cy="${cy}" r="${r * .55}" fill="none" stroke="rgba(0,0,0,.5)" stroke-width="3"/>`;
+    case 'dots': return [0, 2.09, 4.19].map(a => `<circle cx="${(cx + Math.cos(a) * r * .6).toFixed(1)}" cy="${(cy + Math.sin(a) * r * .6).toFixed(1)}" r="2.4" fill="rgba(0,0,0,.55)"/>`).join('');
+    case 'split': return `<path d="M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}z" fill="rgba(0,0,0,.32)"/>`;
+    case 'glow': return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#9dff8a" stroke-width="3"/>`;
+    case 'rainbow': return ['#ff3b3b','#ffe23b','#3bd96a','#3bb8ff'].map((c, i) => `<circle cx="${cx}" cy="${cy}" r="${r * (1 - i * .22)}" fill="none" stroke="${c}" stroke-width="2.5" opacity=".9"/>`).join('');
+    case 'flame': return `<path d="M${cx} ${cy + r * .6} C ${cx - r * .6} ${cy + r * .4} ${cx - r * .5} ${cy - r * .2} ${cx - r * .1} ${cy - r * .7} C ${cx} ${cy - r * .3} ${cx + r * .4} ${cy - r * .3} ${cx + r * .5} ${cy + r * .1} C ${cx + r * .6} ${cy + r * .5} ${cx + r * .3} ${cy + r * .6} ${cx} ${cy + r * .6}z" fill="#ff7a1a"/>`;
+  }
+  return '';
+}
+const LOCS = [
+  {id:'bedroom', name:'Bedroom skatepark', at:0, mult:1}, {id:'desk', name:'School desk', at:5000, mult:1.25},
+  {id:'kitchen', name:'Kitchen table', at:150000, mult:1.5}, {id:'garage', name:'Garage', at:5e6, mult:2},
+  {id:'shop', name:'Skate shop', at:2e8, mult:2.5}, {id:'pro', name:'Pro skatepark', at:5e9, mult:3.5},
+  {id:'arena', name:'Competition arena', at:2e11, mult:5}
+];
+const BOSSES = [{name:'Kickflip Kenny', target:50}, {name:'Heelflip Hana', target:100}, {name:'Shove-it Sam', target:200}, {name:'Tre-Flip Tia', target:350},
+  {name:'Hardflip Hugo', target:550}, {name:'Laser Lena', target:800}, {name:'The Legend: Rodney Fingers', target:1100}];
+const TOURNEYS = [{name:'Local Jam', at:20000, rounds:[40,60,90]}, {name:'City Open', at:2e6, rounds:[120,170,230]},
+  {name:'National Cup', at:2e8, rounds:[300,420,560]}, {name:'World Championship', at:5e10, rounds:[700,900,1100]}];
+const upMult = () => (1 + .15 * state.up.trucks) * (1 + .1 * state.up.deck) * (1 + .03 * state.trophies) * LOCS[state.loc].mult;
+const winMs = () => WINDOW_MS * (1 + .12 * state.up.wheels);
+const stepNow = () => STREAK_STEP + .02 * state.up.grip + (state.truck === 'combo' ? .05 : 0);
+function passivePerSec(){
+  const u = state.up.bear; if(!u) return 0;
+  return u * .6 * TRICKS[state.trick].mult * DECKS[state.deck].mult * upMult() * (state.truck === 'magnet' ? 1.25 : 1);
+}
+function sanitize(){
+  ['bossWins','builds'].forEach(k => { if(!Array.isArray(state[k])) state[k] = []; });
+  state.trophies = +state.trophies || 0;
+  if(!(state.loc >= 0 && state.loc < LOCS.length) || state.peak < LOCS[state.loc].at) state.loc = 0;
+  state.up = Object.assign({trucks:0,wheels:0,grip:0,bear:0,deck:0}, state.up);
+  ['ownedWheels','ownedTrucks','ownedStickers','stickers'].forEach(k => { if(!Array.isArray(state[k])) state[k] = fresh()[k]; });
+  if(!state.ownedWheels.includes('classic')) state.ownedWheels.push('classic');
+  if(!state.ownedTrucks.includes('std')) state.ownedTrucks.push('std');
+  state.owned = Array.from(new Set([0].concat((state.owned || []).filter(i => Number.isInteger(i) && i >= 0 && i < DECKS.length))));
+  if(!state.owned.includes(state.deck)) state.deck = 0;
+  state.peak = Math.max(state.peak || 0, state.money || 0);
+  if(!Number.isInteger(state.trick) || state.trick < 0 || state.trick >= TRICKS.length || state.peak < TRICKS[state.trick].at) state.trick = 0;
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    if(s && typeof s.money === 'number') state = Object.assign(fresh(), s);
+    VT = POOLS[state.vt] ? state.vt : 'scooter'; TRICKS = POOLS[VT].TR; DECKS = POOLS[VT].DK;
+  }catch(e){}
+  sanitize(); ensureDaily();
+}
+let saveTimer = null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }, 300);
+}
+
+function ensureDaily(){
+  const key = new Date().toDateString();
+  if(state.dailyKey === key && state.dailyIdx >= 0) return;
+  const pool = [];
+  TRICKS.forEach((t, i) => { if(i > 0 && state.peak >= t.at) pool.push(i); });
+  state.dailyKey = key;
+  if(!pool.length){ state.dailyIdx = -1; return; }
+  let h = 0; for(const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  state.dailyIdx = pool[h % pool.length];
+}
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const streakMult = s => 1 + stepNow() * Math.min(Math.max(s - 1, 0), STREAK_CAP);
+function fmt(n){
+  if(n < 1000) return Math.floor(n).toLocaleString('en-US');
+  if(n >= 1e36) return n.toExponential(2).replace('+','');
+  const u = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc']; let i = -1;
+  while(n >= 1000 && i < u.length - 1){ n /= 1000; i++; }
+  return String(+(n >= 100 ? n.toFixed(0) : n >= 10 ? n.toFixed(1) : n.toFixed(2))) + u[i];
+}
+const fm = x => x < 1000 ? String(+x.toFixed(1)) : fmt(x);
+/* Shop stock: prices never change, but each board has limited stock. Other shoppers buy it down over time
+   and everything restocks every 5 minutes (same for everyone, based on the clock). */
+const STOCK_MS = 300000;
+const stockWin = () => Math.floor(Date.now() / STOCK_MS);
+const mmss = ms => { const t = Math.ceil(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+let lastWin = stockWin();
+function stockOf(i){
+  if(i === 0) return Infinity;
+  const w = stockWin(), r = rng(w * 131 + i * 7919), e = (Date.now() % STOCK_MS) / STOCK_MS;
+  const base = DECKS[i].cost > 1e8 ? 1 + Math.floor(r() * 2) : 1 + Math.floor(r() * 4);
+  let sold = 0;
+  for(let k = 0; k < base; k++){ const f = r(), sells = r() < .4; if(sells && f < e) sold++; }
+  const mine = state.boughtWin === w ? (state.bought[i] || 0) : 0;
+  return Math.max(0, base - sold - mine);
+}
+const isUnlocked = i => state.peak >= TRICKS[i].at;
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Fingerboard artwork ---------- */
+let uidN = 0;
+function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function artFor(d, u){
+  const W = 400, H = 140, bg = c => `<rect width="${W}" height="${H}" fill="${c}"/>`;
+  switch(d.art){
+    case 'wood': {
+      let g = bg(d.c1);
+      for(let i = 0; i < 10; i++){
+        const y = 28 + i * 10, k = i % 2 ? 6 : -6;
+        g += `<path d="M20 ${y} Q 200 ${y + k} 380 ${y}" stroke="${d.c2}" stroke-width="1.6" fill="none" opacity=".55"/>`;
+      }
+      return {defs:'', g};
+    }
+    case 'wave': {
+      let g = bg(d.c1);
+      for(let i = 0; i < 5; i++){
+        const y = 36 + i * 17;
+        g += `<path d="M20 ${y} q 40 -18 80 0 t 80 0 t 80 0 t 80 0 t 80 0" stroke="${d.c2}" stroke-width="5" fill="none" opacity="${1 - i * .12}"/>`;
+      }
+      return {defs:'', g};
+    }
+    case 'stripes': {
+      const defs = `<pattern id="p-${u}" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="15" height="30" fill="${d.c1}"/><rect x="15" width="15" height="30" fill="${d.c2}"/></pattern>`;
+      return {defs, g:`<rect width="${W}" height="${H}" fill="url(#p-${u})"/>`};
+    }
+    case 'checker': {
+      const defs = `<pattern id="p-${u}" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="${d.c1}"/><rect width="20" height="20" fill="${d.c2}"/><rect x="20" y="20" width="20" height="20" fill="${d.c2}"/></pattern>`;
+      return {defs, g:`<rect width="${W}" height="${H}" fill="url(#p-${u})"/>`};
+    }
+    case 'burst': {
+      let g = bg(d.c1);
+      const n = 20, cx = 200, cy = 70;
+      for(let i = 0; i < n; i += 2){
+        const a1 = i / n * Math.PI * 2, a2 = (i + 1) / n * Math.PI * 2;
+        g += `<polygon points="${cx},${cy} ${cx + 400 * Math.cos(a1)},${cy + 400 * Math.sin(a1)} ${cx + 400 * Math.cos(a2)},${cy + 400 * Math.sin(a2)}" fill="${d.c2}"/>`;
+      }
+      g += `<circle cx="${cx}" cy="${cy}" r="16" fill="#fff" opacity=".9"/>`;
+      return {defs:'', g};
+    }
+    case 'chrome': {
+      const defs = `<linearGradient id="gr-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7f9fc"/><stop offset=".3" stop-color="#8f98a8"/><stop offset=".5" stop-color="#eef1f6"/><stop offset=".75" stop-color="#6e7889"/><stop offset="1" stop-color="#d4dae4"/></linearGradient>`;
+      let g = `<rect width="${W}" height="${H}" fill="url(#gr-${u})"/>`;
+      g += `<polygon points="90,0 130,0 70,140 30,140" fill="#fff" opacity=".35"/><polygon points="250,0 270,0 210,140 190,140" fill="#fff" opacity=".25"/>`;
+      return {defs, g};
+    }
+    case 'galaxy': {
+      let g = bg('#0d0b2a');
+      const r = rng(7);
+      for(let i = 0; i < 50; i++){
+        g += `<circle cx="${(r() * 360 + 20).toFixed(1)}" cy="${(r() * 120 + 10).toFixed(1)}" r="${(r() * 1.6 + .5).toFixed(1)}" fill="#fff" opacity="${(r() * .6 + .4).toFixed(2)}"/>`;
+      }
+      g += `<circle cx="250" cy="70" r="30" fill="${d.c2}"/><ellipse cx="250" cy="70" rx="52" ry="11" fill="none" stroke="${d.c1}" stroke-width="4" transform="rotate(-18 250 70)"/>`;
+      g += `<circle cx="130" cy="48" r="9" fill="${d.c1}" opacity=".9"/>`;
+      return {defs:'', g};
+    }
+    case 'gold': {
+      const defs = `<linearGradient id="gr-${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0d0"/><stop offset=".4" stop-color="${d.c1}"/><stop offset=".7" stop-color="${d.c2}"/><stop offset="1" stop-color="${d.c1}"/></linearGradient>`;
+      let g = `<rect width="${W}" height="${H}" fill="url(#gr-${u})"/>`;
+      g += `<polygon points="200,34 211,62 242,64 218,82 226,111 200,95 174,111 182,82 158,64 189,62" fill="${d.c2}" opacity=".85"/>`;
+      g += `<path d="M60 110 l6 -14 l6 14 l-6 -4z M320 40 l5 -12 l5 12 l-5 -3z" fill="#fff" opacity=".8"/>`;
+      return {defs, g};
+    }
+    case 'tot': {
+      let g = bg('#c8281f'); const r = rng(77);
+      for(let i = 0; i < 12; i++) g += `<path d="M40 ${16 + i * 11} Q 150 ${10 + i * 11 + (i % 2 ? 5 : -5)} 250 ${16 + i * 11} T 360 ${14 + i * 11}" stroke="#7a1410" stroke-width="${(1 + r() * 1.6).toFixed(1)}" fill="none" opacity=".35"/>`;
+      for(let i = 0; i < 6; i++) g += `<ellipse cx="${(80 + r() * 240).toFixed(0)}" cy="${(20 + r() * 100).toFixed(0)}" rx="${(20 + r() * 30).toFixed(0)}" ry="${(8 + r() * 14).toFixed(0)}" fill="#ff7a6a" opacity=".12"/>`;
+      g += `<g transform="rotate(-9 262 88)"><text x="262" y="96" text-anchor="middle" font-family="Archivo Black,Impact,sans-serif" font-size="30" fill="#ff8fb3" stroke="#a3123f" stroke-width="2.5" paint-order="stroke">TOT</text><path d="M240 100 v12 M262 101 v8 M284 100 v14" stroke="#a3123f" stroke-width="3" stroke-linecap="round"/></g>`;
+      return {defs:'', g};
+    }
+    case 'totem': {
+      let g = bg(d.c1);
+      for(let i = 0; i < 5; i++){ const x = 40 + i * 64; g += `<rect x="${x}" y="34" width="52" height="72" rx="8" fill="${d.c2}" opacity="${i % 2 ? .9 : .7}"/><circle cx="${x + 16}" cy="62" r="6" fill="${d.c1}"/><circle cx="${x + 36}" cy="62" r="6" fill="${d.c1}"/><rect x="${x + 14}" y="82" width="24" height="6" rx="3" fill="${d.c1}"/>`; }
+      return {defs:'', g};
+    }
+    case 'veneer': {
+      let g = bg(d.c1);
+      for(let i = 0; i < 8; i++) g += `<path d="M20 ${26 + i * 12} Q 200 ${20 + i * 12 + (i % 2 ? 6 : -6)} 380 ${26 + i * 12}" stroke="#fff" stroke-width="1.2" fill="none" opacity=".08"/>`;
+      g += `<rect x="168" y="62" width="64" height="5" rx="2" fill="#000" opacity=".5"/><rect x="180" y="72" width="40" height="5" rx="2" fill="#000" opacity=".5"/>`;
+      return {defs:'', g};
+    }
+    case 'anchor': {
+      let g = bg(d.c1) + `<g stroke="${d.c2}" stroke-width="7" fill="none" stroke-linecap="round"><circle cx="200" cy="38" r="8"/><path d="M200 46 V106 M182 60 H218 M160 80 Q 200 130 240 80 M160 80 l-4 -12 M160 80 l12 -2 M240 80 l4 -12 M240 80 l-12 -2"/></g>`;
+      return {defs:'', g};
+    }
+    case 'skull': {
+      const defs = `<radialGradient id="rg-${u}"><stop offset="0" stop-color="${d.c1}" stop-opacity=".85"/><stop offset="1" stop-color="${d.c1}" stop-opacity="0"/></radialGradient>`;
+      let g = bg(d.c2) + `<ellipse cx="200" cy="70" rx="150" ry="75" fill="url(#rg-${u})"/>`;
+      g += `<ellipse cx="200" cy="62" rx="32" ry="30" fill="${d.c1}"/><rect x="182" y="82" width="36" height="22" rx="5" fill="${d.c1}"/><circle cx="188" cy="62" r="9" fill="${d.c2}"/><circle cx="212" cy="62" r="9" fill="${d.c2}"/><path d="M200 72 l-5 10 h10z" fill="${d.c2}"/><path d="M190 94 v10 M200 94 v10 M210 94 v10" stroke="${d.c2}" stroke-width="2.5"/>`;
+      return {defs, g};
+    }
+    case 'banana': {
+      let g = bg(d.c1) + `<path d="M60 100 Q 200 -10 340 100 Q 200 40 60 100z" fill="#ffe14a" stroke="#8a5a00" stroke-width="5" stroke-linejoin="round"/><path d="M60 100 l-14 6 l8 -16z M340 100 l12 4 l-4 -14z" fill="#6b4a00"/><circle cx="90" cy="30" r="14" fill="#fff" opacity=".6"/>`;
+      return {defs:'', g};
+    }
+    case 'octo': {
+      let g = bg(d.c1) + `<g stroke="${d.c2}" stroke-width="9" fill="none" stroke-linecap="round">`;
+      for(let i = 0; i < 6; i++) g += `<path d="M${170 + i * 12} 84 q ${i % 2 ? -22 : 22} 22 0 42"/>`;
+      g += `</g><ellipse cx="200" cy="56" rx="46" ry="38" fill="${d.c2}"/><circle cx="184" cy="54" r="9" fill="#fff"/><circle cx="216" cy="54" r="9" fill="#fff"/><circle cx="186" cy="56" r="4" fill="#111"/><circle cx="214" cy="56" r="4" fill="#111"/>`;
+      return {defs:'', g};
+    }
+    case 'pyramid': {
+      return {defs:'', g: bg(d.c1) + `<circle cx="318" cy="38" r="20" fill="#fff2b8"/><polygon points="40,118 130,36 220,118" fill="${d.c2}"/><polygon points="170,118 265,48 360,118" fill="${d.c2}" opacity=".85"/><polygon points="130,36 150,118 220,118" fill="#000" opacity=".18"/>`};
+    }
+    case 'btc': {
+      return {defs:'', g: bg(d.c1) + `<circle cx="200" cy="70" r="44" fill="${d.c2}"/><circle cx="200" cy="70" r="36" fill="none" stroke="${d.c1}" stroke-width="3"/><text x="200" y="88" text-anchor="middle" font-family="Archivo Black,Impact,sans-serif" font-size="56" fill="${d.c1}">B</text><rect x="192" y="26" width="4" height="12" fill="${d.c1}"/><rect x="204" y="26" width="4" height="12" fill="${d.c1}"/><rect x="192" y="102" width="4" height="12" fill="${d.c1}"/><rect x="204" y="102" width="4" height="12" fill="${d.c1}"/>`};
+    }
+    case 'stone': {
+      let g = bg(d.c1); const r = rng(88);
+      for(let i = 0; i < 46; i++) g += `<ellipse cx="${(r() * 400).toFixed(0)}" cy="${(r() * 140).toFixed(0)}" rx="${(4 + r() * 16).toFixed(0)}" ry="${(3 + r() * 9).toFixed(0)}" fill="${r() < .5 ? '#6f757b' : '#b3b8bd'}" opacity=".7"/>`;
+      return {defs:'', g};
+    }
+    case 'leaf': {
+      let g = bg(d.c1); const r = rng(66), cols = ['#2fbf5a', '#145a2e', d.c2];
+      for(let i = 0; i < 20; i++){ const x = r() * 400, y = r() * 140; g += `<ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="28" ry="9" fill="${cols[i % 3]}" transform="rotate(${(r() * 180).toFixed(0)} ${x.toFixed(0)} ${y.toFixed(0)})"/>`; }
+      g += `<path d="M20 100 Q 90 20 160 80 T 300 60 T 390 90" stroke="#ffd23f" stroke-width="7" fill="none" stroke-linecap="round"/>`;
+      return {defs:'', g};
+    }
+    case 'comic': {
+      const defs = `<pattern id="p-${u}" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="${d.c1}"/><circle cx="7" cy="7" r="3.2" fill="${d.c2}"/></pattern>`;
+      let pts = ''; for(let i = 0; i < 24; i++){ const a = i / 24 * 6.283, rr = i % 2 ? 34 : 56; pts += `${(200 + Math.cos(a) * rr * 1.5).toFixed(0)},${(70 + Math.sin(a) * rr).toFixed(0)} `; }
+      return {defs, g:`<rect width="${W}" height="${H}" fill="url(#p-${u})"/><polygon points="${pts}" fill="#ffffff" stroke="#111" stroke-width="3"/><text x="200" y="82" text-anchor="middle" font-family="Archivo Black,Impact,sans-serif" font-size="32" fill="#e8283c" stroke="#111" stroke-width="2">POW</text>`};
+    }
+    case 'horns': {
+      let g = bg(d.c1);
+      g += `<path d="M168 84 C 140 80 118 56 112 30 C 136 48 160 56 184 62z" fill="${d.c2}"/><path d="M232 84 C 260 80 282 56 288 30 C 264 48 240 56 216 62z" fill="${d.c2}"/>`;
+      g += `<ellipse cx="200" cy="86" rx="28" ry="32" fill="${d.c2}"/><circle cx="189" cy="78" r="4.5" fill="${d.c1}"/><circle cx="211" cy="78" r="4.5" fill="${d.c1}"/><circle cx="200" cy="104" r="7" fill="none" stroke="${d.c1}" stroke-width="3"/>`;
+      g += `<rect x="30" y="118" width="340" height="6" fill="${d.c2}" opacity=".35"/>`;
+      return {defs:'', g};
+    }
+    case 'flames': {
+      let g = bg('#1a0b09');
+      const r = rng(3);
+      for(let i = 0; i < 9; i++){
+        const x = 14 + i * 46, h = 55 + r() * 50;
+        const fl = (sx, hh, fill) => `<path d="M${x - sx} 140 C ${x - sx - 16} ${140 - hh * .4}, ${x - sx + 4} ${140 - hh * .6}, ${x - sx + 10} ${140 - hh} C ${x - sx + 22} ${140 - hh * .55}, ${x - sx + 36} ${140 - hh * .3}, ${x - sx + 30} 140z" fill="${fill}"/>`;
+        g += fl(0, h, d.c1) + fl(-6, h * .55, d.c2);
+      }
+      return {defs:'', g};
+    }
+    case 'camo': {
+      let g = bg(d.c1);
+      const r = rng(11), cols = [d.c2, '#24381a', '#6f8a4a'];
+      for(let i = 0; i < 24; i++){
+        const cx = r() * 400, cy = r() * 140;
+        g += `<ellipse cx="${cx.toFixed(0)}" cy="${cy.toFixed(0)}" rx="${(20 + r() * 34).toFixed(0)}" ry="${(10 + r() * 18).toFixed(0)}" fill="${cols[i % 3]}" transform="rotate(${(r() * 180).toFixed(0)} ${cx.toFixed(0)} ${cy.toFixed(0)})"/>`;
+      }
+      return {defs:'', g};
+    }
+    case 'dots': {
+      const defs = `<pattern id="p-${u}" width="30" height="30" patternUnits="userSpaceOnUse"><rect width="30" height="30" fill="${d.c1}"/><circle cx="7.5" cy="7.5" r="6" fill="${d.c2}"/><circle cx="22.5" cy="22.5" r="6" fill="${d.c2}"/></pattern>`;
+      return {defs, g:`<rect width="${W}" height="${H}" fill="url(#p-${u})"/>`};
+    }
+    case 'zigzag': {
+      const defs = `<pattern id="p-${u}" width="40" height="28" patternUnits="userSpaceOnUse"><rect width="40" height="28" fill="${d.c1}"/><path d="M0 20 L10 8 L20 20 L30 8 L40 20" stroke="${d.c2}" stroke-width="4" fill="none"/></pattern>`;
+      return {defs, g:`<rect width="${W}" height="${H}" fill="url(#p-${u})"/>`};
+    }
+    case 'plaid': {
+      const defs = `<pattern id="p-${u}" width="64" height="64" patternUnits="userSpaceOnUse"><rect width="64" height="64" fill="${d.c1}"/><rect x="12" width="16" height="64" fill="${d.c2}" opacity=".65"/><rect y="12" width="64" height="16" fill="${d.c2}" opacity=".65"/><rect x="42" width="4" height="64" fill="#fff" opacity=".5"/><rect y="42" width="64" height="4" fill="#fff" opacity=".5"/></pattern>`;
+      return {defs, g:`<rect width="${W}" height="${H}" fill="url(#p-${u})"/>`};
+    }
+    case 'pixels': {
+      let g = bg(d.c1);
+      const r = rng(21), cols = [d.c1, d.c1, d.c2, '#ffffff', '#1b1f3a', d.c1];
+      for(let cx = 0; cx < 20; cx++) for(let cy = 0; cy < 7; cy++){
+        g += `<rect x="${cx * 20}" y="${cy * 20}" width="20" height="20" fill="${cols[Math.floor(r() * cols.length)]}" opacity="${(.7 + r() * .3).toFixed(2)}"/>`;
+      }
+      return {defs:'', g};
+    }
+    case 'rainbow': {
+      const cols = ['#ff3b3b','#ff9a3b','#ffe23b','#3bd96a','#3bb8ff','#6a5cff','#c24dff'];
+      return {defs:'', g: cols.map((c, i) => `<rect y="${i * 20}" width="${W}" height="21" fill="${c}"/>`).join('')};
+    }
+    case 'lava': {
+      const defs = `<radialGradient id="rg-${u}"><stop offset="0" stop-color="${d.c2}"/><stop offset=".45" stop-color="${d.c1}"/><stop offset="1" stop-color="${d.c1}" stop-opacity="0"/></radialGradient>`;
+      let g = bg('#1a0604');
+      const r = rng(5);
+      for(let i = 0; i < 8; i++){
+        g += `<circle cx="${(r() * 400).toFixed(0)}" cy="${(r() * 140).toFixed(0)}" r="${(30 + r() * 36).toFixed(0)}" fill="url(#rg-${u})"/>`;
+      }
+      return {defs, g};
+    }
+    case 'ice': {
+      const defs = `<linearGradient id="gr-${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${d.c1}"/><stop offset="1" stop-color="${d.c2}"/></linearGradient>`;
+      let g = `<rect width="${W}" height="${H}" fill="url(#gr-${u})"/>`;
+      const r = rng(9);
+      for(let i = 0; i < 16; i++){
+        const x = r() * 400, y = r() * 140;
+        g += `<polygon points="${x.toFixed(0)},${y.toFixed(0)} ${(x + 20 + r() * 50).toFixed(0)},${(y + r() * 40 - 10).toFixed(0)} ${(x + r() * 30).toFixed(0)},${(y + 25 + r() * 40).toFixed(0)}" fill="#fff" opacity="${(.18 + r() * .25).toFixed(2)}"/>`;
+      }
+      return {defs, g};
+    }
+    case 'circuit': {
+      let g = bg('#072c24');
+      const r = rng(13);
+      for(let i = 0; i < 12; i++){
+        const x = (r() * 360 + 10) | 0, y = (r() * 120 + 10) | 0, a = (30 + r() * 80) | 0, b = (20 + r() * 40) | 0;
+        g += `<path d="M${x} ${y} h${a} l14 14 v${b}" stroke="${d.c1}" stroke-width="2.5" fill="none"/><circle cx="${x}" cy="${y}" r="4.5" fill="${d.c2}"/><circle cx="${x + a + 14}" cy="${y + 14 + b}" r="3.5" fill="${d.c2}"/>`;
+      }
+      return {defs:'', g};
+    }
+    case 'sakura': {
+      let g = bg(d.c1);
+      const r = rng(17);
+      g += `<path d="M-10 120 Q 120 80 230 100 T 420 40" stroke="#6b3a2a" stroke-width="5" fill="none"/>`;
+      for(let i = 0; i < 22; i++){
+        const x = r() * 400, y = r() * 140;
+        g += `<ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="10" ry="5.5" fill="${d.c2}" opacity=".9" transform="rotate(${(r() * 180).toFixed(0)} ${x.toFixed(0)} ${y.toFixed(0)})"/>`;
+      }
+      for(let i = 0; i < 6; i++) g += `<circle cx="${(r() * 400).toFixed(0)}" cy="${(r() * 140).toFixed(0)}" r="4" fill="#fff"/>`;
+      return {defs:'', g};
+    }
+    case 'holo': {
+      const defs = `<linearGradient id="gr-${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${d.c1}"/><stop offset=".25" stop-color="#9ad1ff"/><stop offset=".5" stop-color="#a6ffcb"/><stop offset=".72" stop-color="#fff59a"/><stop offset="1" stop-color="${d.c2}"/></linearGradient>`;
+      let g = `<rect width="${W}" height="${H}" fill="url(#gr-${u})"/>`;
+      g += `<polygon points="110,0 170,0 100,140 40,140" fill="#fff" opacity=".35"/><polygon points="260,0 285,0 215,140 190,140" fill="#fff" opacity=".28"/>`;
+      g += `<path d="M310 50 l4 -12 l4 12 l12 4 l-12 4 l-4 12 l-4 -12 l-12 -4z" fill="#fff" opacity=".9"/>`;
+      return {defs, g};
+    }
+    case 'carbon': {
+      const defs = `<pattern id="p-${u}" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#161616"/><rect width="5" height="5" fill="#2c2c2c"/><rect x="5" y="5" width="5" height="5" fill="#2c2c2c"/></pattern>`;
+      let g = `<rect width="${W}" height="${H}" fill="url(#p-${u})"/><rect y="62" width="${W}" height="16" fill="${d.c1}"/><rect y="82" width="${W}" height="3" fill="#fff" opacity=".5"/>`;
+      return {defs, g};
+    }
+    case 'sunset': {
+      const defs = `<linearGradient id="gr-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b1055"/><stop offset=".55" stop-color="${d.c1}"/><stop offset="1" stop-color="${d.c2}"/></linearGradient>`;
+      let g = `<rect width="${W}" height="${H}" fill="url(#gr-${u})"/><circle cx="200" cy="82" r="44" fill="#fff2b8"/>`;
+      g += `<rect x="150" y="70" width="100" height="3" fill="#ff5e7e"/><rect x="150" y="82" width="100" height="5" fill="#ff5e7e"/><rect x="150" y="95" width="100" height="7" fill="#ff5e7e"/>`;
+      g += `<rect y="110" width="${W}" height="30" fill="#2b1055"/>`;
+      return {defs, g};
+    }
+    case 'lightning': {
+      let g = bg(d.c2);
+      g += `<polygon points="235,-5 150,78 197,78 160,145 275,56 222,56 262,-5" fill="${d.c1}"/>`;
+      g += `<polygon points="90,-5 60,40 80,40 62,90 105,35 88,35 110,-5" fill="${d.c1}" opacity=".55"/><polygon points="320,50 300,85 313,85 303,125 335,78 322,78 340,50" fill="${d.c1}" opacity=".55"/>`;
+      return {defs:'', g};
+    }
+    case 'tiger': {
+      let g = bg(d.c1);
+      const r = rng(23);
+      for(let i = 0; i < 13; i++){
+        const x = 10 + i * 32 + r() * 8;
+        g += `<path d="M${x.toFixed(0)} -5 Q ${(x + 16).toFixed(0)} 35 ${(x - 4).toFixed(0)} 70 T ${(x + 6).toFixed(0)} 145" stroke="${d.c2}" stroke-width="${(5 + r() * 6).toFixed(1)}" fill="none" stroke-linecap="round"/>`;
+      }
+      return {defs:'', g};
+    }
+    case 'topo': {
+      let g = bg(d.c1);
+      for(let k = 1; k <= 9; k++) g += `<ellipse cx="180" cy="76" rx="${k * 24}" ry="${(k * 24 * .42).toFixed(0)}" fill="none" stroke="${d.c2}" stroke-width="2.2"/>`;
+      for(let k = 1; k <= 4; k++) g += `<ellipse cx="335" cy="34" rx="${k * 16}" ry="${(k * 16 * .5).toFixed(0)}" fill="none" stroke="${d.c2}" stroke-width="2"/>`;
+      return {defs:'', g};
+    }
+    case 'diamonds': {
+      const defs = `<pattern id="p-${u}" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="${d.c1}"/><polygon points="22,3 41,22 22,41 3,22" fill="${d.c2}"/><polygon points="22,13 31,22 22,31 13,22" fill="${d.c1}"/></pattern>`;
+      return {defs, g:`<rect width="${W}" height="${H}" fill="url(#p-${u})"/>`};
+    }
+    case 'bubbles': {
+      let g = bg(d.c1);
+      const r = rng(31);
+      for(let i = 0; i < 20; i++){
+        g += `<circle cx="${(r() * 400).toFixed(0)}" cy="${(r() * 140).toFixed(0)}" r="${(6 + r() * 20).toFixed(0)}" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-opacity=".65" stroke-width="2"/>`;
+      }
+      return {defs:'', g};
+    }
+    case 'nebula': {
+      const defs = `<radialGradient id="n1-${u}"><stop offset="0" stop-color="${d.c1}" stop-opacity=".9"/><stop offset="1" stop-color="${d.c1}" stop-opacity="0"/></radialGradient><radialGradient id="n2-${u}"><stop offset="0" stop-color="${d.c2}" stop-opacity=".9"/><stop offset="1" stop-color="${d.c2}" stop-opacity="0"/></radialGradient>`;
+      let g = bg('#0a0720') + `<ellipse cx="130" cy="60" rx="150" ry="80" fill="url(#n1-${u})"/><ellipse cx="290" cy="85" rx="160" ry="80" fill="url(#n2-${u})"/>`;
+      const r = rng(41);
+      for(let i = 0; i < 45; i++) g += `<circle cx="${(r() * 400).toFixed(0)}" cy="${(r() * 140).toFixed(0)}" r="${(r() * 1.4 + .4).toFixed(1)}" fill="#fff" opacity="${(r() * .6 + .3).toFixed(2)}"/>`;
+      return {defs, g};
+    }
+    case 'grid': {
+      let g = bg('#1a0b3a') + `<circle cx="200" cy="58" r="32" fill="${d.c1}"/><rect y="62" width="${W}" height="80" fill="#1a0b3a"/>`;
+      for(let k = -9; k <= 9; k++) g += `<line x1="200" y1="62" x2="${200 + k * 70}" y2="140" stroke="${d.c2}" stroke-width="1.5"/>`;
+      for(let k = 1; k <= 6; k++) g += `<line x1="0" y1="${(62 + 78 * Math.pow(k / 6, 2)).toFixed(1)}" x2="${W}" y2="${(62 + 78 * Math.pow(k / 6, 2)).toFixed(1)}" stroke="${d.c2}" stroke-width="1.5"/>`;
+      return {defs:'', g};
+    }
+    case 'koi': {
+      const defs = `<linearGradient id="gr-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a5a99"/><stop offset="1" stop-color="#0e3a6b"/></linearGradient>`;
+      let g = `<rect width="${W}" height="${H}" fill="url(#gr-${u})"/>`;
+      g += `<circle cx="90" cy="100" r="22" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="2"/><circle cx="90" cy="100" r="36" fill="none" stroke="#fff" stroke-opacity=".15" stroke-width="2"/><circle cx="330" cy="40" r="18" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>`;
+      const fish = (x, y, rot, body, spot) => `<g transform="translate(${x} ${y}) rotate(${rot})"><path d="M-34 0 L-58 -14 L-52 0 L-58 14z" fill="${body}" opacity=".85"/><ellipse rx="36" ry="13" fill="${body}"/><circle cx="14" cy="-4" r="3" fill="#1a1a1a"/><ellipse cx="-6" cy="3" rx="9" ry="5" fill="${spot}" opacity=".9"/></g>`;
+      g += fish(150, 52, -12, d.c1, '#fff') + fish(270, 96, 168, d.c2, d.c1);
+      return {defs, g};
+    }
+    case 'aurora': {
+      const defs = `<filter id="f-${u}" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>`;
+      let g = bg('#05122b');
+      const r = rng(51);
+      for(let i = 0; i < 40; i++) g += `<circle cx="${(r() * 400).toFixed(0)}" cy="${(r() * 140).toFixed(0)}" r="${(r() * 1.2 + .4).toFixed(1)}" fill="#fff" opacity="${(r() * .6 + .3).toFixed(2)}"/>`;
+      g += `<g filter="url(#f-${u})"><path d="M-20 90 C 80 20, 160 130, 260 50 S 380 20, 430 70 L430 110 C 330 80, 260 150, 160 100 S 40 60, -20 120z" fill="${d.c1}" opacity=".75"/><path d="M-20 60 C 90 110, 170 10, 270 80 S 380 120, 430 40 L430 70 C 350 140, 270 40, 170 70 S 60 150, -20 90z" fill="${d.c2}" opacity=".6"/></g>`;
+      return {defs, g};
+    }
+    case 'void': {
+      const defs = `<radialGradient id="rg-${u}"><stop offset="0" stop-color="#1a0f3c"/><stop offset="1" stop-color="#000"/></radialGradient>`;
+      let g = `<rect width="${W}" height="${H}" fill="url(#rg-${u})"/>`;
+      const r = rng(61);
+      for(let i = 0; i < 30; i++) g += `<circle cx="${(r() * 400).toFixed(0)}" cy="${(r() * 140).toFixed(0)}" r="${(r() * 1.2 + .4).toFixed(1)}" fill="#fff" opacity="${(r() * .5 + .3).toFixed(2)}"/>`;
+      g += `<ellipse cx="200" cy="70" rx="130" ry="28" fill="none" stroke="${d.c1}" stroke-width="6" transform="rotate(-10 200 70)"/><ellipse cx="200" cy="70" rx="96" ry="19" fill="none" stroke="${d.c2}" stroke-width="3" opacity=".8" transform="rotate(-10 200 70)"/><circle cx="200" cy="70" r="32" fill="#000"/>`;
+      return {defs, g};
+    }
+  }
+  return {defs:'', g: bg(d.c1)};
+}
+
+const shade = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16);
+  const f = c => Math.max(0, Math.min(255, Math.round(c + (a > 0 ? 255 - c : c) * a)));
+  return '#' + [n >> 16 & 255, n >> 8 & 255, n & 255].map(f).map(v => v.toString(16).padStart(2, '0')).join('');
+};
+function deckSVG(d, side, custom){
+  const wf = (custom && state.wheelColor) || d.wheel;
+  const tc = custom && (state.truckColor || (TRUCK_SHOP.find(x => x.id === state.truck) || {}).color);
+  const fk = tc || '#c7ccd6', ln = shade(d.c1, -.35);
+  const wheel = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#1c1c22"/><circle cx="${cx}" cy="${cy}" r="${r * .66}" fill="${wf}" stroke="#111" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="3" fill="#333"/>${custom ? wheelOv(state.wheelDesign, cx, cy, r * .66) : ''}`;
+  let g;
+  if(d.type === 'bike'){
+    g = wheel(100, 96, 34) + wheel(300, 96, 34) +
+      `<g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M100 96 L172 100 L266 52 L150 52 L172 100 M150 52 L100 96" stroke="${d.c1}" stroke-width="7"/><path d="M266 52 L300 96" stroke="${fk}" stroke-width="6"/><path d="M262 52 L254 24 M242 24 L272 24" stroke="${fk}" stroke-width="5"/><path d="M242 24 h-6 M272 24 h6" stroke="${d.c2}" stroke-width="8"/><path d="M150 52 L146 38" stroke="${fk}" stroke-width="5"/><path d="M136 36 h22" stroke="${d.c2}" stroke-width="8"/><path d="M172 100 l-10 14 M172 100 l12 -14" stroke="${d.c2}" stroke-width="4"/></g><rect x="92" y="94" width="16" height="5" fill="${d.c2}"/><rect x="292" y="94" width="16" height="5" fill="${d.c2}"/><circle cx="172" cy="100" r="7" fill="${ln}"/>`;
+  } else {
+    g = wheel(150, 122, 16) + wheel(262, 122, 16) +
+      `<rect x="146" y="112" width="124" height="10" rx="5" fill="${d.c1}" stroke="${ln}" stroke-width="2"/><rect x="152" y="110" width="112" height="3" rx="1.5" fill="#222"/><g fill="none" stroke-linecap="round"><path d="M264 118 L252 10" stroke="${fk}" stroke-width="7"/><path d="M226 10 H278" stroke="${fk}" stroke-width="6"/><path d="M222 10 h-8 M282 10 h8" stroke="${d.c2}" stroke-width="9"/><path d="M134 108 Q150 90 168 108" stroke="${d.c2}" stroke-width="4"/></g><rect x="249" y="44" width="12" height="9" rx="2" fill="${d.c2}"/>`;
+  }
+  const st = custom ? state.stickers.map(id => stickerSVG(id, d.type)).join('') : '';
+  return `<svg viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${g}${st}</svg>`;
+}
+
+/* ---------- UI build ---------- */
+function setBoardArt(){
+  if($('cDeck')) setTimeout(updateCreator, 0);
+  const d = DECKS[state.deck];
+  $('faceTop').innerHTML = deckSVG(d, 'top', true);
+  $('faceBottom').innerHTML = deckSVG(d, 'bottom', true);
+}
+
+function buildTricks(){
+  const ul = $('tricks'); ul.innerHTML = '';
+  TRICKS.forEach((t, i) => {
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'trick'; b.dataset.i = i;
+    b.innerHTML = '<span class="nm"></span><span class="mult"></span>';
+    b.addEventListener('click', () => { if(isUnlocked(i)){ state.trick = i; updateTricks(); updateHUD(); save(); } });
+    li.appendChild(b); ul.appendChild(li);
+  });
+  updateTricks(true);
+}
+function updateTricks(scroll){
+  let n = 0;
+  document.querySelectorAll('.trick').forEach(b => {
+    const i = +b.dataset.i, t = TRICKS[i], ok = isUnlocked(i);
+    if(ok) n++;
+    b.classList.toggle('locked', !ok);
+    b.classList.toggle('sel', ok && state.trick === i);
+    b.setAttribute('aria-disabled', String(!ok));
+    b.querySelector('.nm').textContent = t.name;
+    b.querySelector('.mult').textContent = ok ? '×' + fm(t.mult) + (i === state.dailyIdx ? ' ★ ×' + DAILY_MULT + ' today' : '') : '$' + fmt(t.at) + ' to unlock';
+  });
+  $('trickCount').textContent = n + ' of ' + TRICKS.length + ' tricks unlocked';
+  if(scroll){
+    const sel = document.querySelector('.trick.sel'), c = $('trickScroll');
+    if(sel) c.scrollTop = sel.offsetTop - c.clientHeight / 2 + sel.offsetHeight / 2;
+  }
+}
+
+const WHEEL_COLORS = [[null,'Deck default'],['#f5f5f5','White'],['#efe3c8','Cream'],['#161616','Black'],['#e8283c','Red'],['#ff7a1a','Orange'],['#ffd23f','Yellow'],['#2fbf5a','Green'],['#2f6fe4','Blue'],['#8a5cff','Purple'],['#ff5aa8','Pink'],['#7dff6a','Glow green']];
+const TRUCK_COLORS = [[null,'Silver'],['#161616','Black'],['#d4af37','Gold'],['#b87333','Bronze'],['#e8283c','Red'],['#2f6fe4','Blue'],['#2fbf5a','Green'],['#8a5cff','Purple'],['#ff5aa8','Pink'],['#ff7a1a','Orange']];
+function buildCustom(){
+  [['wheelSw', WHEEL_COLORS, 'wheelColor', 'wheels'], ['truckSw', TRUCK_COLORS, 'truckColor', 'trucks']].forEach(([id, list, key, label]) => {
+    const box = $(id); box.innerHTML = '';
+    list.forEach(([c, name]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'sw' + (c ? '' : ' def'); b.title = name; b.setAttribute('aria-label', name + ' ' + label);
+      if(c) b.style.background = c;
+      b.addEventListener('click', () => { state[key] = c; setBoardArt(); updateCustom(); save(); });
+      b.dataset.c = c || ''; box.appendChild(b);
+    });
+  });
+  updateCustom();
+}
+function updateCustom(){
+  [['wheelSw', 'wheelColor'], ['truckSw', 'truckColor']].forEach(([id, key]) => {
+    $(id).querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.c === (state[key] || '')));
+  });
+}
+let chal = null, tour = null;
+const CHAL_MS = 15000;
+const styleGain = () => (1 + state.trick * .1) * (1 + Math.min(streak, 100) * .02);
+function startChal(title, target, onEnd){
+  if(chal){ toast('Finish the current challenge first'); return; }
+  chal = {title, target, start: performance.now(), score: 0, onEnd};
+  $('vs').classList.add('on'); $('stage').scrollIntoView({behavior:'smooth', block:'center'}); toast('Go! Land as many tricks as you can');
+}
+function updateVs(now){
+  const el = Math.min(1, (now - chal.start) / CHAL_MS);
+  $('vsT').textContent = chal.title + ' (' + Math.max(0, Math.ceil(CHAL_MS / 1000 * (1 - el))) + 's)';
+  $('vsN').textContent = 'You ' + Math.round(chal.score) + ' / Pro ' + chal.target;
+  $('vsMe').style.width = Math.min(100, chal.score / chal.target * 100) + '%';
+  $('vsPro').style.width = el * 100 + '%';
+  if(el >= 1){ const c = chal; chal = null; $('vs').classList.remove('on'); c.onEnd(c.score >= c.target, c.score); }
+}
+function startBoss(i){
+  const B = BOSSES[i];
+  startChal('VS ' + B.name, B.target, (win, sc) => {
+    if(win){
+      if(!state.bossWins.includes(i)){ state.bossWins.push(i); const r = nice(Math.max(1000, state.peak * .1)); state.money += r; state.peak = Math.max(state.peak, state.money); toast('You beat ' + B.name + '! +$' + fmt(r)); }
+      else toast('You beat ' + B.name + ' again');
+      const bp = boardPos(); burst(bp.x, bp.y, 140, ['#ffd23f','#ff5c8a','#5cc8ff','#fff'], 2);
+    } else toast(B.name + ' wins. You scored ' + Math.round(sc) + ' of ' + B.target);
+    updateHUD(); save();
+  });
+}
+const tourFee = () => nice(.01 * state.peak + 500);
+function startTour(i){
+  const fee = tourFee();
+  if(chal) return toast('Finish the current challenge first');
+  if(state.money < fee) return toast('Entry fee is $' + fmt(fee));
+  state.money -= fee; tour = {i, r:0, fee}; updateHUD(); tourRound();
+}
+function tourRound(){
+  const T = TOURNEYS[tour.i];
+  startChal(T.name + ' round ' + (tour.r + 1) + '/3', T.rounds[tour.r], (win, sc) => {
+    if(!win){ toast('Knocked out of ' + T.name + ' with ' + Math.round(sc) + ' of ' + T.rounds[tour.r]); tour = null; updateHUD(); return; }
+    tour.r++;
+    if(tour.r >= 3){ state.trophies++; const prize = tour.fee * 8; state.money += prize; state.peak = Math.max(state.peak, state.money); toast('Champion! ' + T.name + ' trophy won, +$' + fmt(prize)); tour = null; const bp = boardPos(); burst(bp.x, bp.y, 160, ['#ffd23f','#ff5c8a','#5cc8ff','#fff'], 2.2); }
+    else { toast('Round won! Next round starts in 3s'); setTimeout(tourRound, 3000); }
+    updateHUD(); save();
+  });
+}
+function buildWorld(){
+  const mk = (id, arr, fn) => { const box = $(id); box.innerHTML = ''; arr.forEach((x, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'trick'; b.dataset.i = i; b.innerHTML = '<span class="nm"></span><span class="mult"></span>'; b.addEventListener('click', () => fn(i)); box.appendChild(b); }); };
+  mk('locList', LOCS, i => { if(state.peak >= LOCS[i].at){ state.loc = i; updateHUD(); save(); } });
+  mk('bossList', BOSSES, i => { if(i === 0 || state.bossWins.includes(i - 1)) startBoss(i); else toast('Beat the previous pro first'); });
+  mk('tourList', TOURNEYS, i => { if(state.peak >= TOURNEYS[i].at) startTour(i); else toast('Reach $' + fmt(TOURNEYS[i].at) + ' to enter'); });
+}
+function updateWorld(){
+  $('stage').dataset.loc = LOCS[state.loc].id;
+  document.querySelectorAll('#locList .trick').forEach(b => { const i = +b.dataset.i, L = LOCS[i], ok = state.peak >= L.at;
+    b.classList.toggle('locked', !ok); b.classList.toggle('sel', ok && state.loc === i);
+    b.querySelector('.nm').textContent = L.name; b.querySelector('.mult').textContent = ok ? '×' + L.mult + ' earnings' : '$' + fmt(L.at) + ' to unlock'; });
+  document.querySelectorAll('#bossList .trick').forEach(b => { const i = +b.dataset.i, B = BOSSES[i], done = state.bossWins.includes(i), open = i === 0 || state.bossWins.includes(i - 1);
+    b.classList.toggle('locked', !open); b.querySelector('.nm').textContent = B.name + ' (' + B.target + ' pts)'; b.querySelector('.mult').textContent = done ? 'Beaten, rematch' : open ? 'Challenge' : 'Locked'; });
+  document.querySelectorAll('#tourList .trick').forEach(b => { const i = +b.dataset.i, T = TOURNEYS[i], ok = state.peak >= T.at;
+    b.classList.toggle('locked', !ok); b.querySelector('.nm').textContent = T.name + ' (3 rounds)'; b.querySelector('.mult').textContent = ok ? 'Enter $' + fmt(tourFee()) : '$' + fmt(T.at) + ' to unlock'; });
+  $('trophyLine').textContent = state.trophies + ' trophies (+' + state.trophies * 3 + '% earnings) · ' + state.bossWins.length + '/' + BOSSES.length + ' pros beaten';
+}
+function fillSel(id, items, cur){
+  const el = $(id); el.innerHTML = '';
+  items.forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; el.appendChild(o); });
+  el.value = cur;
+}
+function updateCreator(){
+  fillSel('cDeck', state.owned.map(i => [i, DECKS[i].name]), state.deck);
+  fillSel('cWheel', WHEELS.filter(w => state.ownedWheels.includes(w.id)).map(w => [w.id, w.name]), state.wheelDesign);
+  fillSel('cTruck', TRUCK_SHOP.filter(w => state.ownedTrucks.includes(w.id)).map(w => [w.id, w.name]), state.truck);
+  const d = DECKS[state.deck];
+  $('cPrev').innerHTML = deckSVG(d, 'top', true) + deckSVG(d, 'bottom', true);
+  const sb = $('cStick'); sb.innerHTML = state.ownedStickers.length ? '' : '<span class="sub">Buy stickers in the Sticker shop</span>';
+  STICKERS.filter(x => state.ownedStickers.includes(x.id)).forEach(x => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sw' + (state.stickers.includes(x.id) ? ' on' : ''); b.title = x.name; b.style.background = 'var(--panel2)';
+    b.innerHTML = `<svg viewBox="-14 -14 28 28" width="24" height="24" style="display:block;margin:auto"><g stroke="#222" stroke-width="1.5">${x.svg}</g></svg>`;
+    b.addEventListener('click', () => { const a = state.stickers, k = a.indexOf(x.id); if(k >= 0) a.splice(k, 1); else a.push(x.id); setBoardArt(); updateHUD(); save(); });
+    sb.appendChild(b);
+  });
+  const bl = $('bList'); bl.innerHTML = '';
+  state.builds.forEach((b, i) => {
+    const r = document.createElement('div'); r.className = 'urow'; r.innerHTML = '<div><b></b></div><div class="crow"><button type="button" class="buy owned">Load</button><button type="button" class="buy poor">Delete</button></div>';
+    r.querySelector('b').textContent = b.name; const [ld, dl] = r.querySelectorAll('button');
+    ld.addEventListener('click', () => { state.deck = b.deck; state.wheelDesign = b.wheelDesign; state.wheelColor = b.wheelColor; state.truck = b.truck; state.truckColor = b.truckColor; state.stickers = b.stickers.slice(); setBoardArt(); updateCustom(); updateHUD(); save(); });
+    dl.addEventListener('click', () => { state.builds.splice(i, 1); updateCreator(); save(); });
+    bl.appendChild(r);
+  });
+}
+function switchVT(v){
+  if(v === VT || !POOLS[v]) return;
+  state.vs[VT] = {owned: state.owned, deck: state.deck, trick: state.trick};
+  VT = v; state.vt = v; TRICKS = POOLS[v].TR; DECKS = POOLS[v].DK;
+  const o = state.vs[v] || {owned:[0], deck:0, trick:0};
+  state.owned = o.owned; state.deck = o.deck; state.trick = o.trick; state.dailyIdx = -1; streak = 0;
+  sanitize(); ensureDaily(); buildTricks(); buildShop(); setBoardArt(); updateHUD(); save();
+}
+function unlockCheck(prev){
+  const newly = []; TRICKS.forEach((x, i) => { if(prev < x.at && state.peak >= x.at) newly.push(i); });
+  if(newly.length){ state.trick = newly[newly.length - 1]; toast('New trick unlocked: ' + TRICKS[state.trick].name + '!'); updateTricks(true); }
+}
+const upCost = u => nice(u.K * Math.pow(1.9, state.up[u.k]) * Math.max(1, Math.pow(state.peak, .45)));
+function buildUpgrades(){
+  const box = $('upgList'); box.innerHTML = '';
+  UPGRADES.forEach(u => {
+    const r = document.createElement('div'); r.className = 'urow'; r.dataset.k = u.k;
+    r.innerHTML = '<div><b></b><span></span></div><button type="button" class="buy"></button>';
+    r.querySelector('button').addEventListener('click', () => {
+      const lv = state.up[u.k], c = upCost(u);
+      if(lv >= u.max || state.money < c) return;
+      state.money -= c; state.up[u.k]++; toast(u.name + ' level ' + state.up[u.k]); updateHUD(); save();
+    });
+    box.appendChild(r);
+  });
+}
+function updateUpgrades(){
+  UPGRADES.forEach(u => {
+    const r = document.querySelector('.urow[data-k="' + u.k + '"]'), lv = state.up[u.k], c = upCost(u), b = r.querySelector('button');
+    r.querySelector('b').textContent = u.name + ' (level ' + lv + '/' + u.max + ')';
+    r.querySelector('span').textContent = lv ? u.fx(lv) : u.fx(1);
+    b.className = 'buy';
+    if(lv >= u.max){ b.textContent = 'Maxed'; b.classList.add('equipped'); b.disabled = true; }
+    else if(state.money >= c){ b.textContent = 'Upgrade $' + fmt(c); b.disabled = false; }
+    else { b.textContent = '$' + fmt(c); b.classList.add('poor'); b.disabled = true; }
+  });
+}
+const PARTS = [
+  {el:'wheelShop', list:WHEELS, own:'ownedWheels', sel:'wheelDesign', pv: it => `<svg viewBox="0 0 60 30" width="84"><circle cx="30" cy="15" r="13" fill="#1c1c22"/><circle cx="30" cy="15" r="9" fill="#efe3c8"/>${wheelOv(it.id, 30, 15, 9)}</svg>`},
+  {el:'truckShop', list:TRUCK_SHOP, own:'ownedTrucks', sel:'truck', pv: it => `<svg viewBox="0 0 60 30" width="84"><rect x="27" y="2" width="6" height="26" rx="2" fill="${it.color ? shade(it.color, -.18) : '#aab0bb'}"/><rect x="21" y="8" width="18" height="14" rx="4" fill="${it.color || '#c7ccd6'}" stroke="rgba(0,0,0,.4)"/></svg>`},
+  {el:'stickerShop', list:STICKERS, own:'ownedStickers', multi:'stickers', pv: it => `<svg viewBox="-14 -14 28 28" width="40"><g stroke="#222" stroke-width="1.5">${it.svg}</g></svg>`}
+];
+function buildParts(){
+  PARTS.forEach(P => {
+    const box = $(P.el); box.innerHTML = '';
+    P.list.forEach(it => {
+      const el = document.createElement('div'); el.className = 'item'; el.dataset.id = it.id;
+      el.innerHTML = `<div class="pv">${P.pv(it)}</div><b>${it.name}</b><span>${it.desc || ''}</span><button type="button" class="buy"></button>`;
+      el.querySelector('button').addEventListener('click', () => {
+        const owned = state[P.own].includes(it.id);
+        if(!owned){ if(state.money < it.cost) return; state.money -= it.cost; state[P.own].push(it.id); toast('Bought ' + it.name); }
+        if(P.multi){ const a = state[P.multi], i = a.indexOf(it.id); if(i >= 0) a.splice(i, 1); else a.push(it.id); }
+        else state[P.sel] = it.id;
+        setBoardArt(); updateHUD(); save();
+      });
+      box.appendChild(el);
+    });
+  });
+}
+function updateParts(){
+  PARTS.forEach(P => P.list.forEach(it => {
+    const b = document.querySelector('#' + P.el + ' .item[data-id="' + it.id + '"] button'), owned = state[P.own].includes(it.id);
+    b.className = 'buy';
+    if(owned){
+      const on = P.multi ? state[P.multi].includes(it.id) : state[P.sel] === it.id;
+      b.textContent = P.multi ? (on ? 'Remove' : 'Place') : (on ? 'Equipped' : 'Equip');
+      if(!P.multi && on){ b.classList.add('equipped'); b.disabled = true; } else { b.classList.add('owned'); b.disabled = false; }
+    } else if(state.money >= it.cost){ b.textContent = 'Buy $' + fmt(it.cost); b.disabled = false; }
+    else { b.textContent = '$' + fmt(it.cost); b.classList.add('poor'); b.disabled = true; }
+  }));
+}
+function buildShop(){
+  const shop = $('shop'); shop.innerHTML = '';
+  DECKS.map((d, i) => i).sort((a, b) => DECKS[a].cost - DECKS[b].cost).forEach(i => {
+    const d = DECKS[i];
+    const el = document.createElement('div'); el.className = 'deck'; el.dataset.i = i;
+    el.innerHTML = `<div class="preview">${deckSVG(d, 'bottom')}</div>
+      <div class="row"><span class="nm">${d.name}</span><span class="mx">×${fm(d.mult)}</span></div>
+      <div class="sub">${d.brand ? '<b class="brand">Real brand: ' + d.brand + '</b> · ' : ''}Effect: ${(DECK_FX[d.art] || {l:'Confetti'}).l}</div>
+      <div class="stock"></div>
+      <button type="button" class="buy"></button>`;
+    el.querySelector('.buy').addEventListener('click', () => buy(i));
+    shop.appendChild(el);
+  });
+  updateShop();
+}
+function updateShop(){
+  document.querySelectorAll('.deck').forEach(el => {
+    const i = +el.dataset.i, d = DECKS[i], b = el.querySelector('.buy');
+    const owned = state.owned.includes(i), eq = state.deck === i;
+    el.classList.toggle('on', eq);
+    b.className = 'buy';
+    const stk = owned ? Infinity : stockOf(i), st = el.querySelector('.stock');
+    st.textContent = owned ? 'Owned' : stk > 0 ? 'In stock: ' + stk : 'Sold out';
+    st.className = 'stock' + (!owned && stk <= 0 ? ' out' : '');
+    if(eq){ b.textContent = 'Equipped'; b.classList.add('equipped'); b.disabled = true; }
+    else if(owned){ b.textContent = 'Equip'; b.classList.add('owned'); b.disabled = false; }
+    else if(stk <= 0){ b.textContent = 'Sold out'; b.classList.add('poor'); b.disabled = true; }
+    else if(state.money >= d.cost){ b.textContent = 'Buy for $' + fmt(d.cost); b.disabled = false; }
+    else { b.textContent = '$' + fmt(d.cost); b.classList.add('poor'); b.disabled = true; }
+  });
+  $('deckCount').textContent = state.owned.length + ' of ' + DECKS.length + ' rides owned';
+  const w = stockWin();
+  if(w !== lastWin){ lastWin = w; toast('The shop restocked!'); }
+  $('restock').textContent = 'Shop restocks in ' + mmss(STOCK_MS - Date.now() % STOCK_MS);
+}
+
+function buy(i){
+  const d = DECKS[i];
+  if(state.owned.includes(i)){
+    state.deck = i;
+  } else if(stockOf(i) <= 0){
+    toast('Sold out! Restocks in ' + mmss(STOCK_MS - Date.now() % STOCK_MS)); return;
+  } else if(state.money >= d.cost){
+    const w = stockWin();
+    if(state.boughtWin !== w){ state.boughtWin = w; state.bought = {}; }
+    state.bought[i] = (state.bought[i] || 0) + 1;
+    state.money -= d.cost;          // buying costs money; unlocked tricks stay unlocked (peak is kept)
+    state.owned.push(i);
+    state.deck = i;
+    toast('Bought ' + d.name + ' (×' + fm(d.mult) + ')');
+  } else return;
+  setBoardArt(); updateHUD(); save();
+}
+
+function updateHUD(){
+  const t = TRICKS[state.trick], d = DECKS[state.deck];
+  ensureDaily();
+  const nextSm = streakMult(streak + 1);
+  $('money').textContent = '$' + fmt(state.money);
+  $('landed').textContent = fmt(state.landed) + (state.landed === 1 ? ' trick landed' : ' tricks landed');
+  $('streak').textContent = streak;
+  $('streakMultTop').textContent = '×' + fm(nextSm);
+  $('best').textContent = 'Best streak: ' + state.best;
+  const ps = passivePerSec(); $('passive').textContent = ps > 0 ? '+$' + fmt(ps) + '/sec passive' : '';
+  updateUpgrades(); updateParts(); updateWorld();
+  $('vtBtn').textContent = VT === 'bike' ? 'Switch to scooters' : 'Switch to bikes';
+  document.querySelectorAll('.vt button').forEach(b => b.classList.toggle('on', b.dataset.v === VT));
+  $('chip').textContent = t.name;
+  $('board').setAttribute('aria-label', 'Do a ' + t.name);
+  $('eqTrick').textContent = '×' + fm(t.mult);
+  $('eqDeck').textContent = '×' + fm(d.mult);
+  $('eqStreak').textContent = '×' + fm(nextSm);
+  $('eqTotal').textContent = '$' + fmt(Math.max(1, Math.round(t.mult * d.mult * nextSm * upMult() * (state.trick === state.dailyIdx ? DAILY_MULT : 1))));
+  const di = state.dailyIdx;
+  $('daily').textContent = di < 0 ? 'Trick of the day appears once you unlock a trick besides Ollie.'
+    : 'Trick of the day: ' + TRICKS[di].name + ' pays ×' + DAILY_MULT + (state.trick === di ? ' (active now!)' : ' (select it to cash in)');
+  const tier = streak >= 50 ? 3 : streak >= 25 ? 2 : streak >= 10 ? 1 : 0;
+  $('stage').style.setProperty('--tier', TIER_COLORS[tier]);
+  $('stage').style.setProperty('--mat', ['#1d5c52','#3b2a6b','#6b2a4a','#1a4f7a'][tier]);
+  $('stage').style.setProperty('--glow', (Math.min(streak, 50) / 50 * .8).toFixed(2));
+
+  const ni = TRICKS.findIndex((x, i) => !isUnlocked(i));
+  if(ni === -1){
+    $('nextText').textContent = 'Every trick unlocked. Chase a bigger streak.';
+    $('nextBar').style.width = '100%';
+  } else {
+    const need = TRICKS[ni].at;
+    $('nextText').textContent = 'Next trick: reach $' + fmt(need) + ' to unlock ' + TRICKS[ni].name + ' (you have $' + fmt(state.money) + ')';
+    $('nextBar').style.width = Math.min(100, state.money / need * 100) + '%';
+  }
+  updateShop();
+}
+
+/* ---------- Toast / popups ---------- */
+let toastTimer = null;
+function toast(msg){
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+function popup(text, cx, cy){
+  const stage = $('stage'), r = stage.getBoundingClientRect();
+  const el = document.createElement('div'); el.className = 'pop'; el.textContent = text; el.style.fontSize = (1.4 + Math.min(streak, 60) / 60 * 1.6) + 'rem';
+  el.style.left = (cx - r.left) + 'px'; el.style.top = (cy - r.top) + 'px';
+  stage.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+  setTimeout(() => el.remove(), 1200);
+}
+
+/* ---------- Trick animation ---------- */
+let boardAnim = null, shadowAnim = null, flashAnim = null;
+function playTrick(t){
+  const el = $('board3d'), sh = $('shadow');
+  if(boardAnim) boardAnim.cancel();
+  if(shadowAnim) shadowAnim.cancel();
+  if(reduceMotion()){
+    boardAnim = el.animate([{transform:'scale(1)'},{transform:'scale(1.06)'},{transform:'scale(1)'}], {duration:160});
+    return;
+  }
+  const rot = Math.abs(t.x) + Math.abs(t.y) + Math.abs(t.z);
+  const h = t.h != null ? t.h : 30 + Math.min(rot / 360 * 9, 34);
+  const dur = (t.dur || Math.min(380 + rot / 360 * 110, 1000)) / (1 + .05 * state.up.wheels);
+  const env = p => Math.min(1, p / .18, (1 - p) / .18);   // ease in, hold, ease out
+  const frames = [], N = 16;
+  for(let i = 0; i <= N; i++){
+    const p = i / N, lift = 4 * h * p * (1 - p), e = env(p);
+    frames.push({
+      offset: p,
+      transform: `translateX(${((t.dx || 0) * Math.sin(Math.PI * p)).toFixed(2)}px) translateY(${(-lift).toFixed(2)}px) scale(${(1 + lift / 140).toFixed(3)}) ` +
+        `rotateX(${(t.x * p + (t.hx || 0) * e).toFixed(2)}deg) rotateY(${(t.y * p).toFixed(2)}deg) rotateZ(${(t.z * p + (t.hz || 0) * e + (t.tilt || 0) * e).toFixed(2)}deg)`
+    });
+  }
+  boardAnim = el.animate(frames, {duration: dur, easing: 'linear'});
+  shadowAnim = sh.animate([
+    {transform:'scale(1)', opacity:.4},
+    {transform:`scale(${(1 - h / 160).toFixed(2)})`, opacity:.2, offset:.5},
+    {transform:'scale(1)', opacity:.4}
+  ], {duration: dur, easing: 'ease-in-out'});
+}
+function flashText(txt){
+  const f = $('flash'); f.textContent = txt;
+  if(flashAnim) flashAnim.cancel();
+  flashAnim = f.animate([
+    {opacity:1, transform:'translateY(0)'},
+    {opacity:1, transform:'translateY(0)', offset:.6},
+    {opacity:0, transform:'translateY(-8px)'}
+  ], {duration: 800, easing:'ease-out'});
+}
+
+/* ---------- Juice: particles, shake, banners, sound ---------- */
+const fx = $('fx'), fctx = fx.getContext('2d');
+let parts = [], ghosts = [], fxRaf = 0, dpr = 1;
+/* Each board art has its own particle style: colors, gravity (negative rises), speed and shape. */
+const DECK_FX = {
+  banana:{l:'Banana confetti', c:['#ffe14a','#f2b800','#8a5a00'], g:.25, s:'coin'}, octo:{l:'Ink bubbles', c:['#b36bff','#ff8ad8','#fff'], g:-.05, s:'ring'},
+  pyramid:{l:'Sand burst', c:['#f2d28b','#d9a441'], g:.2}, btc:{l:'Crypto coins', c:['#ffd23f','#ffffff'], g:.28, s:'coin'},
+  stone:{l:'Rock chips', c:['#9aa0a6','#6b7075','#d0d3d6'], g:.3, s:'sq'}, leaf:{l:'Falling leaves', c:['#2fbf5a','#1e8a4c','#a6e87a'], g:.05, spd:.8},
+  comic:{l:'POW rings', c:['#ff3b3b','#ffe14a','#ffffff'], g:.15, s:'ring'},
+  wood:{l:'Wood chips', g:.22}, wave:{l:'Splash rings', g:.15, s:'ring'}, stripes:{l:'Candy confetti', g:.18},
+  checker:{l:'Checker bits', g:.2, s:'sq'}, burst:{l:'Starbursts', g:.05, spd:1.4},
+  chrome:{l:'Silver sparks', c:['#fff','#c9d0db','#8f98a8'], g:.25, spd:1.3},
+  galaxy:{l:'Drifting stars', c:['#fff','#a98bff','#ff8ad8'], g:0, spd:.7},
+  gold:{l:'Coin shower', g:.28, s:'coin'},
+  flames:{l:'Flame trail', c:['#ff5a1f','#ffd23f','#ff9a3b'], g:-.07},
+  lava:{l:'Rising embers', c:['#ff4a1a','#ffcf5a'], g:-.06},
+  rainbow:{l:'Rainbow spray', c:['#ff3b3b','#ff9a3b','#ffe23b','#3bd96a','#3bb8ff','#c24dff'], g:.12},
+  ice:{l:'Snowfall', c:['#fff','#bfeaff','#6ee7ff'], g:.03, spd:.8},
+  sakura:{l:'Petal drift', g:.03, spd:.7}, pixels:{l:'Pixel burst', g:.2, s:'sq'},
+  circuit:{l:'Data bits', c:['#12c28f','#b8ffe1'], g:.15, s:'sq'},
+  lightning:{l:'Electric sparks', c:['#ffe600','#fff'], g:.25, spd:1.7},
+  bubbles:{l:'Bubbles', g:-.06, s:'ring'}, dots:{l:'Pop rings', g:.1, s:'ring'}, koi:{l:'Ripples', g:.05, s:'ring'},
+  nebula:{l:'Stardust', c:['#fff','#ff5ad8','#5a7bff'], g:0, spd:.7}, void:{l:'Void sparks', g:0, spd:.8},
+  tot:{l:'Crispy crumbs', c:['#d99a3a','#f2c46b','#8a4b12'], g:.22}, totem:{l:'Totem sparks', c:['#f4c542','#ffffff'], g:.2},
+  veneer:{l:'Wood dust', g:.2}, horns:{l:'Bull rush sparks', c:['#ff3b3b','#ffd23f','#ffffff'], g:.2, spd:1.4},
+  anchor:{l:'Sea spray', c:['#fff','#9fd4ff'], g:.15, s:'ring'}, skull:{l:'Glow wisps', c:['#7dff6a','#d6ffd0'], g:-.04, spd:.8},
+  aurora:{l:'Aurora wisps', g:-.03, spd:.7}, holo:{l:'Prism glitter', c:['#ff9ad5','#9ad1ff','#a6ffcb','#fff59a'], g:.1}
+};
+function sizeFx(){ const r = $('stage').getBoundingClientRect(); dpr = window.devicePixelRatio || 1; fx.width = r.width * dpr; fx.height = r.height * dpr; fctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+function boardPos(){ const s = $('stage').getBoundingClientRect(), b = $('board').getBoundingClientRect(); return {x: b.left + b.width / 2 - s.left, y: b.top + b.height / 2 - s.top}; }
+function burst(x, y, n, colors, power){
+  if(reduceMotion()) return;
+  const f = DECK_FX[DECKS[state.deck].art] || {}, cols = f.c || colors;
+  for(let i = 0; i < n; i++){
+    const a = Math.random() * 6.283, sp = (2 + Math.random() * 5) * power * (f.spd || 1);
+    parts.push({x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2.5, life: 1, d: .012 + Math.random() * .02, r: 2 + Math.random() * 4, c: cols[i % cols.length], s: f.s || (i % 2 ? 'dot' : 'sq'), g: f.g != null ? f.g : .18});
+  }
+  if(parts.length > 600) parts.splice(0, parts.length - 600);
+  if(!fxRaf) fxRaf = requestAnimationFrame(stepFx);
+}
+function stepFx(){
+  fctx.clearRect(0, 0, fx.width / dpr, fx.height / dpr);
+  ghosts = ghosts.filter(g => g.life > 0);
+  parts = parts.filter(p => p.life > 0);
+  parts.forEach(p => {
+    p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= .99; p.life -= p.d;
+    fctx.globalAlpha = Math.max(0, p.life); fctx.fillStyle = p.c;
+    if(p.s === 'sq') fctx.fillRect(p.x, p.y, p.r * 1.6, p.r);
+    else if(p.s === 'ring'){ fctx.beginPath(); fctx.arc(p.x, p.y, p.r * 1.6, 0, 6.283); fctx.strokeStyle = p.c; fctx.lineWidth = 2; fctx.stroke(); }
+    else if(p.s === 'coin'){ fctx.beginPath(); fctx.ellipse(p.x, p.y, p.r * (.4 + Math.abs(Math.sin(p.life * 12))), p.r * 1.3, 0, 0, 6.283); fctx.fill(); }
+    else { fctx.beginPath(); fctx.arc(p.x, p.y, p.r / 1.5, 0, 6.283); fctx.fill(); }
+  });
+  fctx.globalAlpha = 1;
+  fxRaf = (parts.length || ghosts.length) ? requestAnimationFrame(stepFx) : 0;
+}
+function trail(dur, color){
+  if(reduceMotion()) return;
+  const t0 = performance.now(), s0 = $('stage').getBoundingClientRect();
+  (function step(){
+    if(performance.now() - t0 > dur) return;
+    const b = $('board3d').getBoundingClientRect(), gx = b.left + b.width / 2 - s0.left, gy = b.top + b.height / 2 - s0.top;
+    burst(gx, gy, 2, [color], .4);                       // board-specific trail (flames, snow, coins...)
+    if(!fxRaf) fxRaf = requestAnimationFrame(stepFx);
+    requestAnimationFrame(step);
+  })();
+}
+function shake(m){
+  if(reduceMotion()) return;
+  $('stage').animate([{transform:'translate(0,0)'},{transform:`translate(${-m}px,${m / 2}px)`},{transform:`translate(${m}px,${-m / 2}px)`},{transform:`translate(${-m / 2}px,0)`},{transform:'translate(0,0)'}], {duration: 200});
+}
+const SLOWMO = {25:.5, 50:.4, 75:.35, 100:.3};   // playback speed of the trick at huge streaks
+const COMBOS = {5:'NICE!', 10:'SICK!', 15:'GNARLY!', 25:'INSANE!', 40:'UNREAL!', 50:'LEGENDARY!', 75:'GODLIKE!', 100:'MAX STREAK ×11!'};
+function comboBanner(txt){
+  const c = $('combo'); c.textContent = txt;
+  c.animate([{opacity:0, transform:'scale(.4) rotate(-10deg)'},{opacity:1, transform:'scale(1.15) rotate(-4deg)', offset:.2},{opacity:1, transform:'scale(1) rotate(-4deg)', offset:.7},{opacity:0, transform:'scale(1.3) rotate(-4deg)'}], {duration: 1000, easing:'ease-out'});
+}
+let AC = null, muted = false;
+try{ muted = localStorage.getItem('ff-muted') === '1'; }catch(e){}
+function beep(freq, dur, type, vol){
+  if(muted) return;
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain(), t0 = AC.currentTime;
+    o.type = type || 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || .06, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g); g.connect(AC.destination); o.start(); o.stop(t0 + dur);
+  }catch(e){}
+}
+const SCALE = [0,2,4,7,9,12,14,16,19,21];
+function trickSound(){
+  const i = (streak - 1) % 10, o = Math.min(1, Math.floor((streak - 1) / 10));
+  beep(262 * Math.pow(2, (SCALE[i] + o * 12) / 12), .12, 'square', .05);   // pitch climbs with your streak
+  beep(110, .1, 'triangle', .1);                                          // landing thud
+}
+
+/* ---------- Core: do a trick ---------- */
+function endStreak(){
+  if(streak >= 5 && state.truck === 'shield' && performance.now() - lastShield > 30000){ lastShield = performance.now(); last = lastShield; toast('Shield trucks saved your streak!'); return; }
+  if(streak >= 5){ toast('Bailed! Your streak of ' + streak + ' ended'); beep(180, .35, 'sawtooth', .06); beep(120, .4, 'sawtooth', .05); }
+  streak = 0;
+  $('timerFill').style.transform = 'scaleX(0)';
+  updateHUD();
+}
+
+function doTrick(ev){
+  const now = performance.now();
+  if(streak > 0 && now - last > winMs()) endStreak();
+  streak++; last = now;
+  if(chal) chal.score += styleGain();
+  if(streak > state.best) state.best = streak;
+
+  const t = TRICKS[state.trick], d = DECKS[state.deck];
+  const daily = state.trick === state.dailyIdx ? DAILY_MULT : 1;
+  let abMult = 1;
+  if(state.truck === 'lucky' && Math.random() < .1) abMult = 3;
+  else if(state.truck === 'midas' && (state.landed + 1) % 10 === 0) abMult = 5;
+  else if(state.truck === 'chaos') abMult = .5 + Math.random() * 3.5;
+  const earn = Math.max(1, Math.round(t.mult * d.mult * streakMult(streak) * daily * upMult() * abMult));
+  const prevPeak = state.peak;
+  state.money += earn;
+  state.landed++;
+  if(state.money > state.peak) state.peak = state.money;
+
+  // Milestones: reaching one unlocks a trick permanently and takes no money.
+  const newly = [];
+  TRICKS.forEach((x, i) => { if(prevPeak < x.at && state.peak >= x.at) newly.push(i); });
+  if(newly.length){
+    state.trick = newly[newly.length - 1];
+    toast('New trick unlocked: ' + TRICKS[state.trick].name + '!');
+    const up = boardPos(); burst(up.x, up.y, 150, ['#ffd23f','#ff5c8a','#5cc8ff','#ffffff'], 2); shake(7);
+    [0,4,7,12].forEach((n, k) => setTimeout(() => beep(330 * Math.pow(2, n / 12), .2, 'square', .07), k * 90));
+    updateTricks(true);
+  }
+
+  playTrick(t);
+  let rate = 1;
+  if(SLOWMO[streak] && !reduceMotion() && shadowAnim){
+    rate = SLOWMO[streak]; boardAnim.playbackRate = rate; shadowAnim.playbackRate = rate;
+    last += 800;                                          // slow-mo never costs you the streak
+    $('vig').animate([{opacity:0},{opacity:1, offset:.15},{opacity:1, offset:.8},{opacity:0}], {duration: 1500});
+  }
+  const fxp = DECK_FX[d.art] || {};
+  trail(boardAnim.effect.getTiming().duration / rate, fxp.c ? fxp.c[0] : d.c1);
+  flashText(t.name + (daily > 1 ? ' ★ ×' + DAILY_MULT : ''));
+  let cx, cy;
+  if(ev && ev.detail > 0 && typeof ev.clientX === 'number'){ cx = ev.clientX; cy = ev.clientY; }
+  else { const r = $('board').getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 3; }
+  popup('+$' + fmt(earn) + (abMult >= 3 ? ' ★' : ''), cx, cy);
+  const tierN = streak >= 50 ? 3 : streak >= 25 ? 2 : streak >= 10 ? 1 : 0, bp = boardPos();
+  burst(bp.x, bp.y, 12 + Math.min(streak, 100), [d.c1, d.c2, '#ffd23f', '#ffffff'], 1 + tierN * .3);
+  if(tierN) shake(1.5 + tierN * 1.5);
+  trickSound();
+  if(COMBOS[streak]){
+    comboBanner(COMBOS[streak]); burst(bp.x, bp.y, 110, [d.c1, d.c2, '#ffd23f', '#ff5c8a', '#5cc8ff'], 2); shake(9);
+    [0,7,12].forEach((n, k) => setTimeout(() => beep(392 * Math.pow(2, n / 12), .16, 'square', .06), k * 70));
+  }
+
+  $('hint').classList.add('hide');
+  updateHUD();
+  save();
+}
+
+/* ---------- Loop: streak timer ---------- */
+function frame(now){
+  if(chal) updateVs(now);
+  if(streak > 0){
+    const left = 1 - (now - last) / winMs();
+    if(left <= 0) endStreak();
+    else $('timerFill').style.transform = 'scaleX(' + Math.min(1, left) + ')';
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Wire up ---------- */
+$('board').addEventListener('click', doTrick);
+document.addEventListener('keydown', e => {
+  if((e.code === 'Space' || e.key === ' ') && e.target === document.body && !e.repeat && $('home').classList.contains('gone')){
+    e.preventDefault(); doTrick(null);
+  }
+});
+
+let resetArmed = false, resetTimer = null;
+$('resetBtn').addEventListener('click', () => {
+  const b = $('resetBtn');
+  if(!resetArmed){
+    resetArmed = true; b.textContent = 'Tap again to erase progress';
+    resetTimer = setTimeout(() => { resetArmed = false; b.textContent = 'Reset game'; }, 3000);
+    return;
+  }
+  clearTimeout(resetTimer); resetArmed = false; b.textContent = 'Reset game';
+  state = fresh(); streak = 0; VT = 'scooter'; TRICKS = POOLS.scooter.TR; DECKS = POOLS.scooter.DK;
+  $('timerFill').style.transform = 'scaleX(0)';
+  $('hint').classList.remove('hide');
+  setBoardArt(); updateTricks(true); updateHUD();
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  toast('Game reset');
+});
+
+const muteBtn = $('muteBtn');
+const showMute = () => { muteBtn.textContent = muted ? 'Sound off' : 'Sound on'; };
+muteBtn.addEventListener('click', () => { muted = !muted; showMute(); try{ localStorage.setItem('ff-muted', muted ? '1' : '0'); }catch(e){} });
+showMute();
+if(window.ResizeObserver) new ResizeObserver(sizeFx).observe($('stage')); else window.addEventListener('resize', sizeFx);
+sizeFx();
+
+load();
+setBoardArt();
+buildTricks();
+buildShop();
+buildCustom();
+buildUpgrades();
+buildParts();
+buildWorld();
+updateHUD();
+$('cDeck').addEventListener('change', e => { state.deck = +e.target.value; setBoardArt(); updateHUD(); save(); });
+$('cWheel').addEventListener('change', e => { state.wheelDesign = e.target.value; setBoardArt(); save(); });
+$('cTruck').addEventListener('change', e => { state.truck = e.target.value; setBoardArt(); updateHUD(); save(); });
+$('bSave').addEventListener('click', () => { if(state.builds.length >= 8) return toast('Up to 8 loadouts'); state.builds.push({name: $('bName').value.trim() || 'Loadout ' + (state.builds.length + 1), deck: state.deck, wheelDesign: state.wheelDesign, wheelColor: state.wheelColor, truck: state.truck, truckColor: state.truckColor, stickers: state.stickers.slice()}); $('bName').value = ''; updateCreator(); save(); });
+setInterval(() => { const ps = passivePerSec(); if(ps <= 0) return; const prev = state.peak; state.money += ps / 4; if(state.money > state.peak) state.peak = state.money; unlockCheck(prev); updateHUD(); save(); }, 250);
+if(state.landed > 0) $('hint').classList.add('hide');
+function homeStats(){
+  const unl = TRICKS.filter(t => state.peak >= t.at).length;
+  $('hstats').innerHTML = `<div><b>$${fmt(state.money)}</b><span>cash</span></div><div><b>${unl}/${TRICKS.length}</b><span>tricks</span></div><div><b>${state.owned.length}/${DECKS.length}</b><span>rides</span></div><div><b>${state.best}</b><span>best streak</span></div>`;
+  $('playBtn').textContent = state.landed > 0 ? 'Continue' : 'Play';
+  const d = DECKS[state.deck];
+  $('spin').innerHTML = `<div class="face top">${deckSVG(d, 'top', true)}</div><div class="face bottom">${deckSVG(d, 'bottom', true)}</div>`;
+}
+function openHome(){ homeStats(); $('home').classList.remove('gone'); }
+$('playBtn').addEventListener('click', () => { $('home').classList.add('gone'); beep(523, .1, 'square', .05); setTimeout(() => beep(784, .14, 'square', .05), 90); sizeFx(); });
+$('homeBtn').addEventListener('click', openHome);
+$('vtBtn').addEventListener('click', () => switchVT(VT === 'bike' ? 'scooter' : 'bike'));
+document.querySelectorAll('.vt button').forEach(b => b.addEventListener('click', () => { switchVT(b.dataset.v); homeStats(); }));
+const r0 = rng(99);
+for(let i = 0; i < 9; i++){
+  const e = document.createElement('div'); e.className = 'dboard';
+  e.style.cssText = `left:${(r0() * 90).toFixed(0)}%;width:${(90 + r0() * 80).toFixed(0)}px;animation-duration:${(14 + r0() * 14).toFixed(1)}s;animation-delay:-${(r0() * 20).toFixed(1)}s;--r:${(r0() * 60 - 30).toFixed(0)}deg`;
+  e.innerHTML = deckSVG(DECKS[Math.floor(r0() * DECKS.length)], 'bottom');
+  $('drift').appendChild(e);
+}
+homeStats();
+setInterval(updateShop, 1000);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
